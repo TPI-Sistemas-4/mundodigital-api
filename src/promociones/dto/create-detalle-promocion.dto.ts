@@ -1,39 +1,14 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { Type } from "class-transformer/types/decorators/type.decorator";
-import { IsArray, IsDateString, IsInt, IsString, Max, Min, ValidateNested } from "class-validator";
+import { ApiProperty } from '@nestjs/swagger';
+import { IsInt, Min, Max } from 'class-validator';
 
 export class CreateDetallePromocionDto {
-  @ApiProperty()
+  @ApiProperty({ example: 3, description: 'ID del producto a incluir en la promoción' })
   @IsInt()
   idProducto!: number;
 
-  @ApiProperty()
+  @ApiProperty({ example: 15, description: 'Porcentaje de descuento. Entre 1 y 90.' })
   @IsInt()
-  @Min(1) @Max(100)
+  @Min(1)
+  @Max(90)
   descuentoPorcentaje!: number;
-}
-
-// create-promocion.dto.ts
-export class CreatePromocionDto {
-  @ApiProperty()
-  @IsString()
-  nombre!: string;
-
-  @ApiProperty()
-  @IsString()
-  descripcion!: string;
-
-  @ApiProperty()
-  @IsDateString()
-  fechaDesde!: string;
-
-  @ApiProperty()
-  @IsDateString()
-  fechaHasta!: string;
-
-  @ApiProperty({ type: [CreateDetallePromocionDto] })
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateDetallePromocionDto)
-  detalles!: CreateDetallePromocionDto[];
 }
