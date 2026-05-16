@@ -1,0 +1,254 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+  moduleFormat = "commonjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model alertasingresostock {
+  idalerta      Int           @id @default(autoincrement())
+  idingreso     Int
+  mensaje       String        @db.VarChar(255)
+  fechaalerta   DateTime?     @default(now()) @db.Timestamp(6)
+  ingresosstock ingresosstock @relation(fields: [idingreso], references: [idingreso], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model carritovirtual {
+  idcarrito  Int       @id @default(autoincrement())
+  idcliente  Int
+  idproducto Int
+  cantidad   Int
+  clientes   clientes  @relation(fields: [idcliente], references: [idcliente], onDelete: NoAction, onUpdate: NoAction)
+  productos  productos @relation(fields: [idproducto], references: [idproducto], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model choferes {
+  idchofer          Int         @id @default(autoincrement())
+  nombre            String      @db.VarChar(100)
+  apellido          String      @db.VarChar(100)
+  dni               String      @unique @db.VarChar(20)
+  telefono          String?     @db.VarChar(50)
+  email             String?     @db.VarChar(100)
+  licenciaconducir  String      @db.VarChar(50)
+  fechavenclicencia DateTime    @db.Timestamp(6)
+  estado            String?     @default("Activo") @db.VarChar(50)
+  activo            Boolean?    @default(true)
+  vehiculos         vehiculos[]
+}
+
+model clientes {
+  idcliente      Int              @id @default(autoincrement())
+  nombre         String           @db.VarChar(100)
+  apellido       String           @db.VarChar(100)
+  email          String           @unique @db.VarChar(100)
+  telefono       String?          @db.VarChar(20)
+  direccion      String?          @db.VarChar(255)
+  activo         Boolean?         @default(true)
+  carritovirtual carritovirtual[]
+  cupones        cupones[]
+  puntoscliente  puntoscliente[]
+  ventas         ventas[]
+}
+
+model cupones {
+  idcupon             Int          @id @default(autoincrement())
+  codigo              String       @unique @db.VarChar(20)
+  descuentoporcentaje Int
+  activo              Boolean?     @default(true)
+  idpromocion         Int?
+  idcliente           Int?
+  fechavencimiento    DateTime?    @db.Timestamp(6)
+  clientes            clientes?    @relation(fields: [idcliente], references: [idcliente], onDelete: NoAction, onUpdate: NoAction)
+  promociones         promociones? @relation(fields: [idpromocion], references: [idpromocion], onDelete: NoAction, onUpdate: NoAction)
+  usocupones          usocupones[]
+}
+
+model detalleingresostock {
+  iddetalleingreso Int           @id @default(autoincrement())
+  idingreso        Int
+  idproducto       Int
+  cantidad         Int
+  ingresosstock    ingresosstock @relation(fields: [idingreso], references: [idingreso], onDelete: NoAction, onUpdate: NoAction)
+  productos        productos     @relation(fields: [idproducto], references: [idproducto], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model detalleordencompra {
+  iddetalleoc    Int           @id @default(autoincrement())
+  idorden        Int
+  idproducto     Int
+  cantidad       Int
+  preciounitario Decimal       @db.Decimal(18, 2)
+  subtotal       Decimal       @db.Decimal(18, 2)
+  ordenescompra  ordenescompra @relation(fields: [idorden], references: [idorden], onDelete: NoAction, onUpdate: NoAction)
+  productos      productos     @relation(fields: [idproducto], references: [idproducto], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model detallepromocion {
+  iddetalle           Int         @id @default(autoincrement())
+  idpromocion         Int
+  idproducto          Int
+  descuentoporcentaje Int
+  productos           productos   @relation(fields: [idproducto], references: [idproducto], onDelete: NoAction, onUpdate: NoAction)
+  promociones         promociones @relation(fields: [idpromocion], references: [idpromocion], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([idpromocion, idproducto], map: "uq_detallepromocion")
+}
+
+model detalleventas {
+  iddetalle           Int       @id @default(autoincrement())
+  idventa             Int
+  idproducto          Int
+  cantidad            Int
+  preciounitario      Decimal   @db.Decimal(18, 2)
+  direccionentrega    String    @db.VarChar(200)
+  indicacionesentrega String?   @db.VarChar(200)
+  productos           productos @relation(fields: [idproducto], references: [idproducto], onDelete: NoAction, onUpdate: NoAction)
+  ventas              ventas    @relation(fields: [idventa], references: [idventa], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model envios {
+  idenvio            Int       @id @default(autoincrement())
+  idventa            Int
+  idruta             Int?
+  direccionentrega   String    @db.VarChar(200)
+  fechaenvio         DateTime? @default(now()) @db.Timestamp(6)
+  estado             String?   @default("Pendiente") @db.VarChar(50)
+  observaciones      String?   @db.VarChar(255)
+  comprobanteentrega String?   @db.VarChar(255)
+  activo             Boolean?  @default(true)
+  rutas              rutas?    @relation(fields: [idruta], references: [idruta], onDelete: NoAction, onUpdate: NoAction)
+  ventas             ventas    @relation(fields: [idventa], references: [idventa], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model ingresosstock {
+  idingreso           Int                   @id @default(autoincrement())
+  idorden             Int?
+  fechaingreso        DateTime?             @default(now()) @db.Timestamp(6)
+  observaciones       String?               @db.VarChar(255)
+  alertasingresostock alertasingresostock[]
+  detalleingresostock detalleingresostock[]
+  ordenescompra       ordenescompra?        @relation(fields: [idorden], references: [idorden], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model notificacioneslogistica {
+  idnotificacion     Int       @id @default(autoincrement())
+  idventa            Int
+  fechaenvio         DateTime? @default(now()) @db.Timestamp(6)
+  estadonotificacion String?   @default("Pendiente") @db.VarChar(20)
+  ventas             ventas    @relation(fields: [idventa], references: [idventa], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model ordenescompra {
+  idorden            Int                  @id @default(autoincrement())
+  idproveedor        Int
+  fechapedido        DateTime?            @default(now()) @db.Timestamp(6)
+  estado             String?              @default("Generada") @db.VarChar(50)
+  observaciones      String?              @db.VarChar(255)
+  total              Decimal?             @default(0) @db.Decimal(18, 2)
+  detalleordencompra detalleordencompra[]
+  ingresosstock      ingresosstock[]
+  proveedores        proveedores          @relation(fields: [idproveedor], references: [idproveedor], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model productos {
+  idproducto          Int                   @id @default(autoincrement())
+  nombre              String                @db.VarChar(100)
+  precio              Decimal               @db.Decimal(18, 2)
+  stockactual         Int?                  @default(0)
+  puntoreposicion     Int?                  @default(5)
+  carritovirtual      carritovirtual[]
+  detalleingresostock detalleingresostock[]
+  detalleordencompra  detalleordencompra[]
+  detallepromocion    detallepromocion[]
+  detalleventas       detalleventas[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model promociones {
+  idpromocion      Int                @id @default(autoincrement())
+  nombre           String             @db.VarChar(100)
+  descripcion      String?            @db.VarChar(255)
+  fechadesde       DateTime           @db.Timestamp(6)
+  fechahasta       DateTime           @db.Timestamp(6)
+  activa           Boolean?           @default(true)
+  cupones          cupones[]
+  detallepromocion detallepromocion[]
+}
+
+model proveedores {
+  idproveedor   Int             @id @default(autoincrement())
+  razonsocial   String          @db.VarChar(150)
+  cuit          String          @unique @db.VarChar(20)
+  email         String          @db.VarChar(100)
+  telefono      String?         @db.VarChar(50)
+  direccion     String?         @db.VarChar(150)
+  activo        Boolean?        @default(true)
+  ordenescompra ordenescompra[]
+}
+
+model puntoscliente {
+  idpunto         Int       @id @default(autoincrement())
+  idcliente       Int
+  idventa         Int?
+  puntosotorgados Int
+  fecha           DateTime? @default(now()) @db.Timestamp(6)
+  concepto        String    @db.VarChar(100)
+  clientes        clientes  @relation(fields: [idcliente], references: [idcliente], onDelete: NoAction, onUpdate: NoAction)
+  ventas          ventas?   @relation(fields: [idventa], references: [idventa], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model rutas {
+  idruta        Int        @id @default(autoincrement())
+  nombreruta    String     @db.VarChar(100)
+  zona          String     @db.VarChar(100)
+  fecharuta     DateTime   @db.Timestamp(6)
+  estado        String?    @default("Pendiente") @db.VarChar(50)
+  idvehiculo    Int?
+  observaciones String?    @db.VarChar(255)
+  activo        Boolean?   @default(true)
+  envios        envios[]
+  vehiculos     vehiculos? @relation(fields: [idvehiculo], references: [idvehiculo], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model usocupones {
+  iduso   Int     @id @default(autoincrement())
+  idcupon Int
+  idventa Int
+  cupones cupones @relation(fields: [idcupon], references: [idcupon], onDelete: NoAction, onUpdate: NoAction)
+  ventas  ventas  @relation(fields: [idventa], references: [idventa], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model vehiculos {
+  idvehiculo     Int       @id @default(autoincrement())
+  patente        String    @unique @db.VarChar(20)
+  marca          String    @db.VarChar(100)
+  modelo         String    @db.VarChar(100)
+  anio           Int
+  capacidadcarga Decimal?  @db.Decimal(10, 2)
+  estado         String?   @default("Disponible") @db.VarChar(50)
+  idchofer       Int?
+  activo         Boolean?  @default(true)
+  rutas          rutas[]
+  choferes       choferes? @relation(fields: [idchofer], references: [idchofer], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model ventas {
+  idventa                 Int                       @id @default(autoincrement())
+  idcliente               Int
+  fechaventa              DateTime?                 @default(now()) @db.Timestamp(6)
+  subtotal                Decimal                   @db.Decimal(18, 2)
+  descuento               Decimal?                  @default(0) @db.Decimal(18, 2)
+  total                   Decimal                   @db.Decimal(18, 2)
+  detalleventas           detalleventas[]
+  envios                  envios[]
+  notificacioneslogistica notificacioneslogistica[]
+  puntoscliente           puntoscliente[]
+  usocupones              usocupones[]
+  clientes                clientes                  @relation(fields: [idcliente], references: [idcliente], onDelete: NoAction, onUpdate: NoAction)
+}
