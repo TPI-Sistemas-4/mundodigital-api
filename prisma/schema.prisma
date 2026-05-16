@@ -1,6 +1,6 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
   moduleFormat = "commonjs"
 }
 
@@ -39,6 +39,19 @@ model choferes {
   vehiculos         vehiculos[]
 }
 
+model Usuario {
+  idusuario    Int         @id @default(autoincrement())
+  email        String      @unique @db.VarChar(100)
+  passwordhash String      @db.VarChar(256)
+  tipousuario  TipoUsuario
+  activo       Boolean     @default(true)
+  fechaalta    DateTime    @default(now()) @db.Timestamp(6)
+  updatedat    DateTime    @default(now()) @updatedAt @db.Timestamp(6)
+  cliente      clientes?
+
+  @@map("usuarios")
+}
+
 model clientes {
   idcliente      Int              @id @default(autoincrement())
   nombre         String           @db.VarChar(100)
@@ -47,7 +60,9 @@ model clientes {
   telefono       String?          @db.VarChar(20)
   direccion      String?          @db.VarChar(255)
   activo         Boolean?         @default(true)
+  idusuario      Int?             @unique
   carritovirtual carritovirtual[]
+  usuario        Usuario?         @relation(fields: [idusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction)
   cupones        cupones[]
   puntoscliente  puntoscliente[]
   ventas         ventas[]
@@ -251,4 +266,9 @@ model ventas {
   puntoscliente           puntoscliente[]
   usocupones              usocupones[]
   clientes                clientes                  @relation(fields: [idcliente], references: [idcliente], onDelete: NoAction, onUpdate: NoAction)
+}
+
+enum TipoUsuario {
+  SISTEMA
+  CLIENTE
 }
