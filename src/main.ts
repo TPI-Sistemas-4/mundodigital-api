@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { ValidationPipe } from '@nestjs/common/pipes/validation.pipe';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -18,11 +19,8 @@ async function bootstrap() {
   document.security = [{ 'x-api-key': [] }];
 
   SwaggerModule.setup('api', app, document);
+if (process.env.NODE_ENV === 'production') {
   app.use((req, res, next) => {
-    console.log('PATH:', req.path);
-    console.log('HEADERS:', req.headers['x-api-key']);
-    console.log('ENV KEY:', process.env.API_KEY);
-    
     const openPaths = ['/api', '/api-json', '/api-yaml'];
     if (openPaths.some(p => req.path.startsWith(p))) return next();
     
@@ -32,6 +30,12 @@ async function bootstrap() {
     }
     next();
   });
+}
+
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    transform: true,
+  }));
 
   await app.listen(process.env.PORT ?? 3000);
 }
