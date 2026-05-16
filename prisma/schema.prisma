@@ -1,7 +1,8 @@
 generator client {
-  provider     = "prisma-client"
-  output       = "../generated/prisma"
-  moduleFormat = "commonjs"
+  provider        = "prisma-client"
+  output          = "../generated/prisma"
+  previewFeatures = ["partialIndexes"]
+  moduleFormat    = "commonjs"
 }
 
 datasource db {
@@ -105,13 +106,13 @@ model detalleordencompra {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model detallepromocion {
   iddetalle           Int         @id @default(autoincrement())
-  idpromocion         Int
-  idproducto          Int
+  idpromocion         Int         @unique(map: "uq_detallepromocion_general", where: raw("(idproducto IS NULL)"))
+  idproducto          Int?
   descuentoporcentaje Int
-  productos           productos   @relation(fields: [idproducto], references: [idproducto], onDelete: NoAction, onUpdate: NoAction)
+  productos           productos?  @relation(fields: [idproducto], references: [idproducto], onDelete: NoAction, onUpdate: NoAction)
   promociones         promociones @relation(fields: [idpromocion], references: [idpromocion], onDelete: NoAction, onUpdate: NoAction)
 
-  @@unique([idpromocion, idproducto], map: "uq_detallepromocion")
+  @@unique([idpromocion, idproducto], map: "uq_detallepromocion", where: raw("(idproducto IS NOT NULL)"))
 }
 
 model detalleventas {
@@ -185,14 +186,14 @@ model productos {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model promociones {
-  idpromocion      Int                @id @default(autoincrement())
-  nombre           String             @db.VarChar(100)
-  descripcion      String?            @db.VarChar(255)
-  fechadesde       DateTime           @db.Timestamp(6)
-  fechahasta       DateTime           @db.Timestamp(6)
-  activa           Boolean?           @default(true)
+  idpromocion      Int               @id @default(autoincrement())
+  nombre           String            @db.VarChar(100)
+  descripcion      String?           @db.VarChar(255)
+  fechadesde       DateTime          @db.Timestamp(6)
+  fechahasta       DateTime          @db.Timestamp(6)
+  activa           Boolean?          @default(true)
   cupones          cupones[]
-  detallepromocion detallepromocion[]
+  detallepromocion detallepromocion?
 }
 
 model proveedores {

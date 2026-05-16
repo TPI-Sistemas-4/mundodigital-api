@@ -11,24 +11,28 @@ export class PromocionesService {
     }
 
     async create(dto: CreatePromocionDto) {
-    return await this.prismaService.promociones.create({
-        data: {
-        nombre: dto.nombre,
-        descripcion: dto.descripcion,
-        fechadesde: new Date(dto.fechaDesde),
-        fechahasta: new Date(dto.fechaHasta),
-        activa: false,
-        detallepromocion: {
-                create: dto.detalles.map(d => ({
-                descuentoporcentaje: d.descuentoPorcentaje,
-                productos: {
-                    connect: { idproducto: d.idProducto }
-                }
-                })),
+        const promo = await this.prismaService.promociones.create({
+            data: {
+            nombre: dto.nombre,
+            descripcion: dto.descripcion,
+            fechadesde: new Date(dto.fechaDesde),
+            fechahasta: new Date(dto.fechaHasta),
+            activa: false,
             },
-            },
+        })
+
+        await this.prismaService.detallepromocion.createMany({
+            data: dto.detalles.map(d => ({
+            idpromocion: promo.idpromocion,
+            idproducto: d.idProducto ?? null,
+            descuentoporcentaje: d.descuentoPorcentaje,
+            })),
+        })
+
+        return this.prismaService.promociones.findUnique({
+            where: { idpromocion: promo.idpromocion },
             include: { detallepromocion: true },
-        });
+        })
     }
 }
     

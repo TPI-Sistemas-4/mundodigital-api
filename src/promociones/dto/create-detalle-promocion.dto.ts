@@ -1,10 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, Min, Max } from 'class-validator';
+import { IsInt, Min, Max, IsOptional } from 'class-validator';
 
 export class CreateDetallePromocionDto {
   @ApiProperty({ example: 3, description: 'ID del producto a incluir en la promoción' })
   @IsInt()
-  idProducto!: number;
+  @IsOptional()
+  idProducto?: number;
 
   @ApiProperty({ example: 15, description: 'Porcentaje de descuento. Entre 1 y 90.' })
   @IsInt()
