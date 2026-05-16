@@ -6,6 +6,12 @@ import { ValidationPipe } from '@nestjs/common/pipes/validation.pipe';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.enableCors({
+    origin: process.env.FRONTEND_URL,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type'],
+  })
+
   const config = new DocumentBuilder()
     .setTitle('MundoDigital API')
     .setVersion('1.0')
@@ -37,6 +43,6 @@ if (process.env.NODE_ENV === 'production') {
     transform: true,
   }));
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 3001);
 }
 bootstrap();
