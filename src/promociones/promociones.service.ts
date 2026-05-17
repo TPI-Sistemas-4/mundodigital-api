@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
+import { CreatePromocionDto } from './dto/create-promocion.dto';
 
 @Injectable()
 export class PromocionesService {
@@ -7,6 +8,31 @@ export class PromocionesService {
 
     async findAll() {
         return await this.prismaService.promociones.findMany();
+    }
+
+    async create(dto: CreatePromocionDto) {
+        const promo = await this.prismaService.promociones.create({
+            data: {
+            nombre: dto.nombre,
+            descripcion: dto.descripcion,
+            fechadesde: new Date(dto.fechaDesde),
+            fechahasta: new Date(dto.fechaHasta),
+            activa: false,
+            },
+        })
+
+        await this.prismaService.detallepromocion.createMany({
+            data: dto.detalles.map(d => ({
+            idpromocion: promo.idpromocion,
+            idproducto: d.idProducto ?? null,
+            descuentoporcentaje: d.descuentoPorcentaje,
+            })),
+        })
+
+        return this.prismaService.promociones.findUnique({
+            where: { idpromocion: promo.idpromocion },
+            include: { detallepromocion: true },
+        })
     }
 }
     
