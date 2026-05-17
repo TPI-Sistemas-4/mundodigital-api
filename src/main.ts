@@ -27,15 +27,18 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
 if (process.env.NODE_ENV === 'production') {
   app.use((req, res, next) => {
-    const openPaths = ['/api', '/api-json', '/api-yaml', '/auth/login'];
-    if (openPaths.some(p => req.path.startsWith(p))) return next();
+    const openPaths = ['/api', '/api-json', '/api-yaml', '/auth/login']
+    if (openPaths.some(p => req.path.startsWith(p))) return next()
     
-    const key = req.headers['x-api-key'];
+    // dejar pasar preflight OPTIONS siempre
+    if (req.method === 'OPTIONS') return next()
+
+    const key = req.headers['x-api-key']
     if (key !== process.env.API_KEY) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ message: 'Unauthorized' })
     }
-    next();
-  });
+    next()
+  })
 }
 
   app.useGlobalPipes(new ValidationPipe({
