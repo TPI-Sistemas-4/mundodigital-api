@@ -14,6 +14,8 @@ model alertasingresostock {
   idingreso     Int
   mensaje       String        @db.VarChar(255)
   fechaalerta   DateTime?     @default(now()) @db.Timestamp(6)
+  leida         Boolean?      @default(false)
+  tipo          String?       @db.VarChar
   ingresosstock ingresosstock @relation(fields: [idingreso], references: [idingreso], onDelete: NoAction, onUpdate: NoAction)
 }
 
@@ -106,25 +108,23 @@ model detalleordencompra {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model detallepromocion {
   iddetalle           Int         @id @default(autoincrement())
-  idpromocion         Int         @unique(map: "uq_detallepromocion_general", where: raw("(idproducto IS NULL)"))
+  idpromocion         Int
   idproducto          Int?
   descuentoporcentaje Int
   productos           productos?  @relation(fields: [idproducto], references: [idproducto], onDelete: NoAction, onUpdate: NoAction)
   promociones         promociones @relation(fields: [idpromocion], references: [idpromocion], onDelete: NoAction, onUpdate: NoAction)
 
-  @@unique([idpromocion, idproducto], map: "uq_detallepromocion", where: raw("(idproducto IS NOT NULL)"))
+  @@unique([idpromocion, idproducto], map: "uq_detallepromocion")
 }
 
 model detalleventas {
-  iddetalle           Int       @id @default(autoincrement())
-  idventa             Int
-  idproducto          Int
-  cantidad            Int
-  preciounitario      Decimal   @db.Decimal(18, 2)
-  direccionentrega    String    @db.VarChar(200)
-  indicacionesentrega String?   @db.VarChar(200)
-  productos           productos @relation(fields: [idproducto], references: [idproducto], onDelete: NoAction, onUpdate: NoAction)
-  ventas              ventas    @relation(fields: [idventa], references: [idventa], onDelete: NoAction, onUpdate: NoAction)
+  iddetalle      Int       @id @default(autoincrement())
+  idventa        Int
+  idproducto     Int
+  cantidad       Int
+  preciounitario Decimal   @db.Decimal(18, 2)
+  productos      productos @relation(fields: [idproducto], references: [idproducto], onDelete: NoAction, onUpdate: NoAction)
+  ventas         ventas    @relation(fields: [idventa], references: [idventa], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model envios {
@@ -193,7 +193,7 @@ model promociones {
   fechahasta       DateTime          @db.Timestamp(6)
   activa           Boolean?          @default(true)
   cupones          cupones[]
-  detallepromocion detallepromocion?
+  detallepromocion detallepromocion[]
 }
 
 model proveedores {
@@ -261,6 +261,9 @@ model ventas {
   subtotal                Decimal                   @db.Decimal(18, 2)
   descuento               Decimal?                  @default(0) @db.Decimal(18, 2)
   total                   Decimal                   @db.Decimal(18, 2)
+  estado                  estadoventa               @default(Pendiente_de_entrega)
+  direccionentrega        String?                   @db.VarChar(200)
+  indicacionesentrega     String?                   @db.VarChar(200)
   detalleventas           detalleventas[]
   envios                  envios[]
   notificacioneslogistica notificacioneslogistica[]
@@ -272,4 +275,10 @@ model ventas {
 enum TipoUsuario {
   SISTEMA
   CLIENTE
+}
+
+enum estadoventa {
+  Pendiente_de_entrega @map("Pendiente de entrega")
+  Entregada @map("Entregada")
+  Cancelada @map("Cancelada")
 }
