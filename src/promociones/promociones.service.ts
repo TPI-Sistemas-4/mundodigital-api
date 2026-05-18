@@ -8,7 +8,14 @@ export class PromocionesService {
     constructor(private readonly prismaService: PrismaService) { }
 
     async findAll() {
-        return await this.prismaService.promociones.findMany();
+        return await this.prismaService.promociones.findMany({
+            where: {
+                eliminada: false,
+            },
+            include: {
+                detallepromocion: true,
+            },
+        });
     }
 
     async create(dto: CreatePromocionDto) {
@@ -104,6 +111,48 @@ export class PromocionesService {
                 where: { idpromocion: id },
                 include: { detallepromocion: true },
             }),
+        };
+    }
+
+    async remove(id: number) {
+
+        const promocion = await this.prismaService.promociones.findUnique({
+            where: {
+                idpromocion: id,
+            },
+            include: {
+                cupones: true,
+            },
+        });
+
+        if (!promocion) {
+            throw new NotFoundException('La promoción no existe');
+        }
+
+        // Verificar cupones activos
+        const tieneCuponesActivos = promocion.cupones.some(
+            (c) => c.activo === true,
+        );
+
+        if (tieneCuponesActivos) {
+            throw new BadRequestException(
+                'No se puede eliminar una promoción con cupones activos emitidos',
+            );
+        }
+
+        // Eliminación lógica
+        await this.prismaService.promociones.update({
+            where: {
+                idpromocion: id,
+            },
+            data: {
+                eliminada: true,
+                activa: false,
+            },
+        });
+
+        return {
+            message: 'Promoción eliminada correctamente',
         };
     }
 }
