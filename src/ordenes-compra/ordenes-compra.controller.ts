@@ -25,7 +25,7 @@ export class OrdenesCompraController {
   }
 
   @Post()
-  @ApiOperation({ summary: 'Crear orden de compra (HU3 - pendiente)' })
+  @ApiOperation({ summary: 'Crear orden de compra con detalle de productos' })
   create(@Body() dto: CreateOrdenesCompraDto) {
     return this.ordenesCompraService.create(dto);
   }
