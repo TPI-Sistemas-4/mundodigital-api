@@ -45,4 +45,13 @@ export class ProductosController {
 
     res.end(pdfBuffer);
   }
+
+  /**
+   * HU-3: Reporte gráfico de estado de stock
+   * GET /productos/stock/resumen
+   */
+  @Get('stock/resumen')
+  async getResumenEstados() {
+    return this.productosService.getResumenEstados();
+  }
 }
