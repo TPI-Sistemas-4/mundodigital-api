@@ -1,9 +1,10 @@
 import { Body, Controller, Get, Post, Put, Delete, Param } from '@nestjs/common';
 import { PromocionesService } from './promociones.service';
-import { ApiOperation } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreatePromocionDto } from './dto/create-promocion.dto';
 import { UpdatePromocionDto } from './dto/update-promocion.dto';
 
+@ApiTags('G4 - Promociones')
 @Controller('promociones')
 export class PromocionesController {
     constructor(private readonly promocionesService: PromocionesService) { }
