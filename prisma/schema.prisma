@@ -192,6 +192,7 @@ model promociones {
   fechadesde       DateTime           @db.Timestamp(6)
   fechahasta       DateTime           @db.Timestamp(6)
   activa           Boolean?           @default(true)
+  esGeneral        Boolean            @default(false)
   eliminada        Boolean            @default(false)
   cupones          cupones[]
   detallepromocion detallepromocion[]
