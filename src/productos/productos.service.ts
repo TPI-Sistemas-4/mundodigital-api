@@ -133,4 +133,22 @@ export class ProductosService {
       doc.end();
     });
   }
+
+
+  // ─── HU-3: Resumen de estados de stock ───────────────────────────────
+  async getResumenEstados() {
+    const productos = await this.findAllConStock();
+
+    const resumen = { Disponible: 0, Critico: 0, 'Sin Stock': 0 };
+    productos.forEach((p) => resumen[p.estadoStock]++);
+
+    return {
+      total: productos.length,
+      distribucion: [
+        { estado: 'Disponible', cantidad: resumen['Disponible'] },
+        { estado: 'Critico',    cantidad: resumen['Critico'] },
+        { estado: 'Sin Stock',  cantidad: resumen['Sin Stock'] },
+      ],
+    };
+  }
 }
