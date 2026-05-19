@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsDateString, IsArray, ValidateNested, IsNotEmpty } from 'class-validator';
+import { IsString, IsDateString, IsArray, ValidateNested, IsNotEmpty, IsOptional, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 import { CreateDetallePromocionDto } from './create-detalle-promocion.dto';
 
@@ -23,6 +23,16 @@ export class CreatePromocionDto {
   @IsDateString()
   @IsNotEmpty()
   fechaHasta!: string;
+
+  @ApiProperty({ example: true, description: 'Estado de la promoción', required: false, })
+  @IsOptional()
+  @IsBoolean()
+  activa?: boolean;
+
+  @ApiProperty({ example: 'Por producto', description: 'Tipo de promocion', required: false, })
+  @IsOptional()
+  @IsBoolean()
+  esGeneral?: boolean;
 
   @ApiProperty({ description: 'Productos incluidos en la promoción', type: [CreateDetallePromocionDto] })
   @IsArray()

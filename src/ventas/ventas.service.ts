@@ -115,38 +115,41 @@ export class VentasService {
     const total = subtotal - descuento;
 
     // ── Transacción ───────────────────────────────────────────────────────────
-    return await this.prismaService.$transaction(async (tx) => {
+   return await this.prismaService.$transaction(async (tx) => {
 
-      const venta = await tx.ventas.create({
-        data: {
-          idcliente:           dto.idCliente,
-          estado:              dto.estado ?? EstadoVenta.PENDIENTE,         
-          subtotal,
-          descuento,
-          total,
-          direccionentrega:    dto.direccionEntrega    ?? null,
-          indicacionesentrega: dto.indicacionesEntrega ?? null,
-        },
-      });
+  const venta = await tx.ventas.create({
+    data: {
+      idcliente:           dto.idCliente,
+      estado:              dto.estado ?? EstadoVenta.PENDIENTE,         
+      subtotal,
+      descuento,
+      total,
+      direccionentrega:    dto.direccionEntrega    ?? null,
+      indicacionesentrega: dto.indicacionesEntrega ?? null,
+    },
+  });
 
-      await tx.detalleventas.createMany({
-        data: dto.detalles.map((d) => ({
-          idventa:        venta.idventa,
-          idproducto:     d.idProducto,
-          cantidad:       d.cantidad,
-          preciounitario: productoMap.get(d.idProducto)!.precio, // snapshot
-        })),
-      });
+  await tx.detalleventas.createMany({
+    data: dto.detalles.map((d) => ({
+      idventa:        venta.idventa,
+      idproducto:     d.idProducto,
+      cantidad:       d.cantidad,
+      preciounitario: productoMap.get(d.idProducto)!.precio,
+    })),
+  });
 
-      // RN05: decrementar stock atómicamente
-      for (const d of dto.detalles) {
-        await tx.productos.update({
-          where: { idproducto: d.idProducto },
-          data:  { stockactual: { decrement: d.cantidad } },
-        });
-      }
-
-      return venta;
+  for (const d of dto.detalles) {
+    await tx.productos.update({
+      where: { idproducto: d.idProducto },
+      data:  { stockactual: { decrement: d.cantidad } },
     });
   }
+
+  // ← traer la venta completa con detalles al final
+  return tx.ventas.findUnique({
+            where: { idventa: venta.idventa },
+            include: { detalleventas: true }
+      });
+    });
+  } 
 }

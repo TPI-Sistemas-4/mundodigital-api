@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AlertasStockService } from './alertas-stock.service';
 import { CreateAlertasStockDto } from './dto/create-alertas-stock.dto';
 import { UpdateAlertasStockDto } from './dto/update-alertas-stock.dto';
@@ -9,11 +9,33 @@ import { UpdateAlertasStockDto } from './dto/update-alertas-stock.dto';
 export class AlertasStockController {
   constructor(private readonly alertasStockService: AlertasStockService) {}
 
-  // HU2 - Visualizar alertas pendientes enviadas por G3
+  // HU2 de Grupo 2 - Visualizar alertas pendientes enviadas por G3
   @Get()
   @ApiOperation({ summary: 'Listar alertas de reposición pendientes enviadas por G3' })
   findAll() {
     return this.alertasStockService.findAll();
+  }
+
+  /**
+   * HU-8 - Grupo 3: Consultar alertas de ingresos de productos
+   * GET /alertas/ingresos
+   */
+  @Get('ingresos')
+  @ApiOperation({ summary: 'Consultar alertas de ingresos de stock registrados' })
+  @ApiResponse({ status: 200, description: 'Listado de alertas de ingreso, no leídas primero' })
+  async getAlertasIngreso() {
+    return this.alertasStockService.findAlertasIngreso();
+  }
+
+  @Get('stock')
+  async getAlertasStock() {
+    await this.alertasStockService.generarAlertasStock();
+    return this.alertasStockService.findAlertasStock();
+  }
+
+  @Patch(':id/leida')
+  async marcarLeida(@Param('id', ParseIntPipe) id: number) {
+    return this.alertasStockService.marcarLeida(id);
   }
 
   @Post()
