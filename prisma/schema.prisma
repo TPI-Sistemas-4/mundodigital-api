@@ -10,12 +10,12 @@ datasource db {
 }
 
 model alertasingresostock {
-  idalerta      Int           @id @default(autoincrement())
+  idalerta      Int            @id @default(autoincrement())
   idingreso     Int?
-  mensaje       String        @db.VarChar(255)
-  fechaalerta   DateTime?     @default(now()) @db.Timestamp(6)
-  leida         Boolean?      @default(false)
-  tipo          String?       @db.VarChar
+  mensaje       String         @db.VarChar(255)
+  fechaalerta   DateTime?      @default(now()) @db.Timestamp(6)
+  leida         Boolean?       @default(false)
+  tipo          String?        @db.VarChar
   ingresosstock ingresosstock? @relation(fields: [idingreso], references: [idingreso], onDelete: NoAction, onUpdate: NoAction)
 }
 
@@ -186,13 +186,13 @@ model productos {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model promociones {
-  idpromocion      Int               @id @default(autoincrement())
-  nombre           String            @db.VarChar(100)
-  descripcion      String?           @db.VarChar(255)
-  fechadesde       DateTime          @db.Timestamp(6)
-  fechahasta       DateTime          @db.Timestamp(6)
-  activa           Boolean?          @default(true)
-  eliminada        Boolean           @default(false)
+  idpromocion      Int                @id @default(autoincrement())
+  nombre           String             @db.VarChar(100)
+  descripcion      String?            @db.VarChar(255)
+  fechadesde       DateTime           @db.Timestamp(6)
+  fechahasta       DateTime           @db.Timestamp(6)
+  activa           Boolean?           @default(true)
+  eliminada        Boolean            @default(false)
   cupones          cupones[]
   detallepromocion detallepromocion[]
 }
@@ -280,6 +280,6 @@ enum TipoUsuario {
 
 enum estadoventa {
   Pendiente_de_entrega @map("Pendiente de entrega")
-  Entregada @map("Entregada")
-  Cancelada @map("Cancelada")
+  Entregada            @map("Entregada")
+  Cancelada            @map("Cancelada")
 }
