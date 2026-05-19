@@ -8,7 +8,7 @@ export class OrdenesCompraService {
 
   // RN03 - Las órdenes deben mostrar proveedor, fecha, total y estado
   async findAll(estado?: string) {
-    return this.prisma.ordenescompra.findMany({
+    const ordenes = await this.prisma.ordenescompra.findMany({
       where: estado ? { estado } : {},
       include: {
         proveedores: {
@@ -23,6 +23,19 @@ export class OrdenesCompraService {
         },
       },
       orderBy: { fechapedido: 'desc' },
+    });
+
+    // RN-11 de Grupo-3: Recibida → Generada → Ingresada
+    const prioridad: Record<string, number> = {
+      'Recibida':  0,
+      'Generada':  1,
+      'Ingresada': 2,
+    };
+
+    return ordenes.sort((a, b) => {
+      const ea = prioridad[a.estado ?? 'Generada'] ?? 1;
+      const eb = prioridad[b.estado ?? 'Generada'] ?? 1;
+      return ea - eb;
     });
   }
 
