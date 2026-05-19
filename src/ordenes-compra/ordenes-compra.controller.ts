@@ -41,4 +41,13 @@ export class OrdenesCompraController {
   remove(@Param('id') id: string) {
     return this.ordenesCompraService.remove(+id);
   }
+
+  /**
+   * HU-4: Reporte gráfico de órdenes de compra por estado
+   * GET /ordenes-compra/resumen
+   */
+  @Get('resumen')
+  async getResumenEstados() {
+    return this.ordenesCompraService.getResumenEstados();
+  }
 }
