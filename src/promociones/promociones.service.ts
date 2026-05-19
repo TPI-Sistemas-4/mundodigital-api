@@ -7,8 +7,26 @@ import { UpdatePromocionDto } from './dto/update-promocion.dto';
 export class PromocionesService {
     constructor(private readonly prismaService: PrismaService) { }
 
+    private soloFecha(date: Date) {
+        return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    }
+
+    private esAplicable(promocion: any): boolean {
+        const hoy = this.soloFecha(new Date());
+
+        const desde = this.soloFecha(new Date(promocion.fechadesde));
+        const hasta = this.soloFecha(new Date(promocion.fechahasta));
+
+        return (
+            !promocion.eliminada &&
+            promocion.activa &&
+            desde <= hoy &&
+            hoy <= hasta
+        );
+    }
+
     async findAll() {
-        return await this.prismaService.promociones.findMany({
+        const promociones = await this.prismaService.promociones.findMany({
             where: {
                 eliminada: false,
             },
@@ -16,6 +34,60 @@ export class PromocionesService {
                 detallepromocion: true,
             },
         });
+
+        return promociones.map((p) => ({
+            ...p,
+            esAplicable: this.esAplicable(p),
+        }));
+    }
+
+    async findOne(id: number) {
+
+        const promocion = await this.prismaService.promociones.findFirst({
+            where: {
+                idpromocion: id,
+                eliminada: false,
+            },
+            include: {
+                detallepromocion: true,
+            },
+        });
+
+        if (!promocion) {
+            throw new NotFoundException('Promoción no encontrada');
+        }
+
+        return {
+            ...promocion,
+            esAplicable: this.esAplicable(promocion),
+        };
+    }
+
+    async buscarPorNombre(nombre: string) {
+
+        const promociones = await this.prismaService.promociones.findMany({
+            where: {
+                eliminada: false,
+                nombre: {
+                    contains: nombre,
+                    mode: 'insensitive',
+                },
+            },
+            include: {
+                detallepromocion: true,
+            },
+        });
+
+        if (!promociones.length) {
+            throw new NotFoundException(
+                'No se encontraron promociones con ese nombre',
+            );
+        }
+
+        return promociones.map((p) => ({
+            ...p,
+            esAplicable: this.esAplicable(p),
+        }));
     }
 
     async create(dto: CreatePromocionDto) {
@@ -55,7 +127,22 @@ export class PromocionesService {
         }
 
         // No permitir modificar promociones activas
-        if (promocion.activa) {
+        const quiereModificarDatos =
+            dto.nombre !== undefined ||
+            dto.descripcion !== undefined ||
+            dto.fechaDesde !== undefined ||
+            dto.fechaHasta !== undefined ||
+            dto.detalles !== undefined;
+
+        const quiereDesactivar =
+            promocion.activa === true &&
+            dto.activa === false;
+
+        if (
+            promocion.activa &&
+            quiereModificarDatos &&
+            !quiereDesactivar
+        ) {
             throw new BadRequestException(
                 'No se puede modificar una promoción activa',
             );
@@ -84,6 +171,13 @@ export class PromocionesService {
                 descripcion: dto.descripcion,
                 fechadesde: fechaDesde,
                 fechahasta: fechaHasta,
+                ...(dto.esGeneral !== undefined && {
+                    esGeneral: dto.esGeneral,
+                }),
+                ...(dto.activa !== undefined && {
+                    activa: dto.activa,
+                }),
+
             },
         });
 
