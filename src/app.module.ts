@@ -11,10 +11,11 @@ import { ProductosModule } from './productos/productos.module';
 import { UsuariosModule } from './usuarios/Usuarios.module';
 import { AuthModule } from './auth/auth.module';
 import { ProveedoresModule } from './proveedores/proveedores.module';
+import { OrdenesCompraModule } from './ordenes-compra/ordenes-compra.module';
 
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, CuponesModule, PromocionesModule, ClientesModule, VentasModule, ProductosModule, UsuariosModule, ProveedoresModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, CuponesModule, PromocionesModule, ClientesModule, VentasModule, ProductosModule, UsuariosModule, ProveedoresModule, OrdenesCompraModule],
   controllers: [AppController],
   providers: [AppService, PrismaService],
   exports: [PrismaService],
