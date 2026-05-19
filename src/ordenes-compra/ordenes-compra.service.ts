@@ -104,4 +104,25 @@ export class OrdenesCompraService {
   remove(id: number) {
     return `This action removes a #${id} ordenesCompra`;
   }
+
+  async getResumenEstados() {
+    const ordenes = await this.prisma.ordenescompra.findMany({
+      select: { estado: true },
+    });
+
+    const resumen = { Generada: 0, Recibida: 0, Ingresada: 0 };
+    ordenes.forEach((o) => {
+      const estado = o.estado ?? 'Generada';
+      if (estado in resumen) resumen[estado]++;
+    });
+
+    return {
+      total: ordenes.length,
+      distribucion: [
+        { estado: 'Generada',  cantidad: resumen['Generada']  },
+        { estado: 'Recibida',  cantidad: resumen['Recibida']  },
+        { estado: 'Ingresada', cantidad: resumen['Ingresada'] },
+      ],
+    };
+  }
 }
