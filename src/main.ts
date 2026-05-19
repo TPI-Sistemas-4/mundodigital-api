@@ -36,8 +36,14 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config)
   document.security = [{ 'x-api-key': [] }]
-  SwaggerModule.setup('api', app, document)
 
+  SwaggerModule.setup('api', app, document, {
+    swaggerOptions: {
+      tagsSorter: 'alpha',        // ordena los grupos alfabéticamente
+      operationsSorter: 'alpha',  // ordena los endpoints dentro de cada grupo también
+    },
+  })
+  
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     transform: true,
