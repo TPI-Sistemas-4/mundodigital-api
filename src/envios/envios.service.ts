@@ -5,6 +5,7 @@ import { EnvioResponseDto } from './dto/envio-response.dto';
 import { PrismaService } from 'src/prisma.service';
 import { ActualizarEstadoEnvioDto } from './dto/actualizar-estado-envio.dto';
 import { CrearDetalleEnvioDto } from './dto/crear-detalle-envio.dto';
+import { AsignarRecursosDto } from './dto/asignar-recursos.dto';
 
 @Injectable()
 export class EnviosService {
@@ -169,6 +170,64 @@ export class EnviosService {
     });
 
     return { idenvio, detalle: detalleGuardado };
+  }
+
+  // ─── HU3: Asignar recursos logísticos ────────────────────────────────────
+  async asignarRecursos(idenvio: number, dto: AsignarRecursosDto) {
+    // Verificar que el envío exista y esté activo
+    const envio = await this.prisma.envios.findFirst({
+      where: { idenvio, activo: true },
+    });
+    if (!envio) {
+      throw new NotFoundException(`El envío #${idenvio} no existe o no está activo.`);
+    }
+
+    // CA: no se permiten recursos inactivos
+    const vehiculo = await this.prisma.vehiculos.findFirst({
+      where: { idvehiculo: dto.idvehiculo, activo: true },
+    });
+    if (!vehiculo) {
+      throw new BadRequestException(
+        `El vehículo #${dto.idvehiculo} no existe o no está activo.`,
+      );
+    }
+
+    const chofer = await this.prisma.choferes.findFirst({
+      where: { idchofer: dto.idchofer, activo: true },
+    });
+    if (!chofer) {
+      throw new BadRequestException(
+        `El chofer #${dto.idchofer} no existe o no está activo.`,
+      );
+    }
+
+    const ruta = await this.prisma.rutas.findFirst({
+      where: { idruta: dto.idruta, activo: true },
+    });
+    if (!ruta) {
+      throw new BadRequestException(
+        `La ruta #${dto.idruta} no existe o no está activa.`,
+      );
+    }
+
+    // upsert: si ya existe asignación la pisa, si no la crea
+    const asignacion = await this.prisma.asignacionenvio.upsert({
+      where:  { idenvio },
+      update: {
+        idvehiculo: dto.idvehiculo,
+        idchofer:   dto.idchofer,
+        idruta:     dto.idruta,
+        fechaasignacion: new Date(),
+      },
+      create: {
+        idenvio,
+        idvehiculo: dto.idvehiculo,
+        idchofer:   dto.idchofer,
+        idruta:     dto.idruta,
+      },
+    });
+
+    return asignacion;
   }
 
   // ─── Utilidad ─────────────────────────────────────────────────────────────
