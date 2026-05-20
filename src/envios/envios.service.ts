@@ -4,6 +4,7 @@ import { CrearEnvioDto } from './dto/crear-envio.dto';
 import { EnvioResponseDto } from './dto/envio-response.dto';
 import { PrismaService } from 'src/prisma.service';
 import { ActualizarEstadoEnvioDto } from './dto/actualizar-estado-envio.dto';
+import { CrearDetalleEnvioDto } from './dto/crear-detalle-envio.dto';
 
 @Injectable()
 export class EnviosService {
@@ -112,6 +113,62 @@ export class EnviosService {
       where: { idenvio },
       orderBy: { fechacambio: 'asc' },
     });
+  }
+
+  // ─── HU2: Registrar detalle del envío ────────────────────────────────────
+  async registrarDetalle(
+    idenvio: number,
+    dto: CrearDetalleEnvioDto,
+  ): Promise<{ idenvio: number; detalle: any[] }> {
+    // Verificar que el envío exista y esté activo
+    const envio = await this.prisma.envios.findFirst({
+      where: { idenvio, activo: true },
+    });
+    if (!envio) {
+      throw new NotFoundException(`El envío #${idenvio} no existe o no está activo.`);
+    }
+
+    // CA: verificar que todos los productos existan
+    const idsProducto = dto.detalle.map((d) => d.idproducto);
+    const productosEncontrados = await this.prisma.productos.findMany({
+      where: { idproducto: { in: idsProducto } },
+      select: { idproducto: true },
+    });
+
+    const idsEncontrados = productosEncontrados.map((p) => p.idproducto);
+    const idsInexistentes = idsProducto.filter((id) => !idsEncontrados.includes(id));
+    if (idsInexistentes.length > 0) {
+      throw new BadRequestException(
+        `Los siguientes productos no existen: ${idsInexistentes.join(', ')}.`,
+      );
+    }
+
+    // Insertar detalle — createMany para eficiencia
+    const detalleExistente = await this.prisma.detalleenvio.findFirst({
+      where: { idenvio },
+    })
+
+    if (detalleExistente) {
+      throw new BadRequestException(
+        `El envío #${idenvio} ya tiene detalle registrado.`,
+      )
+    }
+    
+    await this.prisma.detalleenvio.createMany({
+      data: dto.detalle.map((item) => ({
+        idenvio,
+        idproducto: item.idproducto,
+        cantidad:   item.cantidad,
+      })),
+    });
+
+    // Devolver el detalle completo con nombres de producto
+    const detalleGuardado = await this.prisma.detalleenvio.findMany({
+      where: { idenvio },
+      include: { productos: { select: { idproducto: true, nombre: true, precio: true } } },
+    });
+
+    return { idenvio, detalle: detalleGuardado };
   }
 
   // ─── Utilidad ─────────────────────────────────────────────────────────────
