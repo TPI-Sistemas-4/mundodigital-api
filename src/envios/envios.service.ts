@@ -13,10 +13,10 @@ export class EnviosService {
 
   // Mapa de transiciones válidas (CA: solo se permiten estas)
   private readonly TRANSICIONES: Record<string, string> = {
+    'Generado':  'Preparado',
     'Preparado': 'En Camino',
     'En Camino': 'Entregado',
   };
-
   // ─── HU1: Registrar envío ─────────────────────────────────────────────────
   async registrar(dto: CrearEnvioDto): Promise<EnvioResponseDto> {
     // CA: validar que la venta exista
@@ -43,7 +43,7 @@ export class EnviosService {
         idventa:          dto.idventa,
         direccionentrega: dto.direccionentrega,
         observaciones:    dto.observaciones ?? null,
-        estado:           'Preparado',
+        estado:           'Generado',
         activo:           true,
       },
     });
@@ -114,6 +114,26 @@ export class EnviosService {
       where: { idenvio },
       orderBy: { fechacambio: 'asc' },
     });
+  }
+
+  async obtenerPorId(idenvio: number): Promise<EnvioResponseDto> {
+    const envio = await this.prisma.envios.findFirst({
+      where: { idenvio, activo: true },
+    });
+    if (!envio) {
+      throw new NotFoundException(`El envío #${idenvio} no existe o no está activo.`);
+    }
+    return this.mapResponse(envio);
+  }
+
+  async obtenerPorVenta(idventa: number): Promise<EnvioResponseDto> {
+    const envio = await this.prisma.envios.findFirst({
+      where: { idventa, activo: true },
+    });
+    if (!envio) {
+      throw new NotFoundException(`No existe un envío activo para la venta #${idventa}.`);
+    }
+    return this.mapResponse(envio);
   }
 
   // ─── HU2: Registrar detalle del envío ────────────────────────────────────

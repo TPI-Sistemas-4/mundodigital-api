@@ -30,9 +30,14 @@ export class PromocionesService {
             where: {
                 eliminada: false,
             },
-            include: {
-                detallepromocion: true,
+            include: { 
+                detallepromocion: {
+                    include: {
+                    productos: true
+                    }
+                }
             },
+            orderBy: { updatedat: 'desc' },
         });
 
         return promociones.map((p) => ({

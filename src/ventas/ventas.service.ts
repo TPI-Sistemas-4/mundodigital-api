@@ -5,9 +5,12 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import { CreateVentaDto, EstadoVenta } from './dto/create.venta.dto';
+import { EnviosService } from 'src/envios/envios.service';
 @Injectable()
 export class VentasService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(private readonly prismaService: PrismaService, private readonly enviosService: EnviosService) {}
+
+
 
   async findAll() {
         return await this.prismaService.ventas.findMany({ 
@@ -15,7 +18,7 @@ export class VentasService {
         });
   }
 
-  async create(dto: CreateVentaDto) {
+    async create(dto: CreateVentaDto) {
 
     // ── RN04: cliente debe existir ────────────────────────────────────────────
     const cliente = await this.prismaService.clientes.findUnique({
@@ -115,41 +118,63 @@ export class VentasService {
     const total = subtotal - descuento;
 
     // ── Transacción ───────────────────────────────────────────────────────────
-   return await this.prismaService.$transaction(async (tx) => {
+    const ventaCompleta = await this.prismaService.$transaction(async (tx) => {
 
-  const venta = await tx.ventas.create({
-    data: {
-      idcliente:           dto.idCliente,
-      estado:              dto.estado ?? EstadoVenta.PENDIENTE,         
-      subtotal,
-      descuento,
-      total,
-      direccionentrega:    dto.direccionEntrega    ?? null,
-      indicacionesentrega: dto.indicacionesEntrega ?? null,
-    },
-  });
-
-  await tx.detalleventas.createMany({
-    data: dto.detalles.map((d) => ({
-      idventa:        venta.idventa,
-      idproducto:     d.idProducto,
-      cantidad:       d.cantidad,
-      preciounitario: productoMap.get(d.idProducto)!.precio,
-    })),
-  });
-
-  for (const d of dto.detalles) {
-    await tx.productos.update({
-      where: { idproducto: d.idProducto },
-      data:  { stockactual: { decrement: d.cantidad } },
-    });
-  }
-
-  // ← traer la venta completa con detalles al final
-  return tx.ventas.findUnique({
-            where: { idventa: venta.idventa },
-            include: { detalleventas: true }
+      const venta = await tx.ventas.create({
+        data: {
+          idcliente:           dto.idCliente,
+          estado:              dto.estado ?? EstadoVenta.PENDIENTE,         
+          subtotal,
+          descuento,
+          total,
+          direccionentrega:    dto.direccionEntrega    ?? null,
+          indicacionesentrega: dto.indicacionesEntrega ?? null,
+        },
       });
-    });
-  } 
+
+      await tx.detalleventas.createMany({
+        data: dto.detalles.map((d) => ({
+          idventa:        venta.idventa,
+          idproducto:     d.idProducto,
+          cantidad:       d.cantidad,
+          preciounitario: productoMap.get(d.idProducto)!.precio,
+        })),
+      });
+
+      for (const d of dto.detalles) {
+        await tx.productos.update({
+          where: { idproducto: d.idProducto },
+          data:  { stockactual: { decrement: d.cantidad } },
+        });
+      }
+
+    // ← traer la venta completa con detalles al final
+      return tx.ventas.findUnique({
+          where: { idventa: venta.idventa },
+          include: { detalleventas: true }
+        });
+      });
+
+      if (!ventaCompleta) {
+        throw new NotFoundException(`Error al recuperar la venta recién creada.`);
+      }
+
+      console.log('[VentasService] Venta creada:', ventaCompleta.idventa);
+      console.log('[VentasService] Llamando a enviosService.registrar...');
+
+      try {
+        const envio = await this.enviosService.registrar({
+          idventa:          ventaCompleta.idventa,
+          direccionentrega: dto.direccionEntrega ?? '',
+          observaciones:    'Envío generado automáticamente',
+        });
+        console.log('[VentasService] Envío creado:', envio);
+      } catch (error) {
+        console.error('[VentasService] Error al crear envío:', error.message);
+      }
+
+      return ventaCompleta;
+      
+    } 
+
 }

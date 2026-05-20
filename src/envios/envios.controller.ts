@@ -1,10 +1,11 @@
 import { Controller, Post, Body, HttpCode, HttpStatus, Param, ParseIntPipe, Get, Patch } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { EnviosService } from './envios.service';
 import { CrearEnvioDto } from './dto/crear-envio.dto';
 import { ActualizarEstadoEnvioDto } from './dto/actualizar-estado-envio.dto';
 import { CrearDetalleEnvioDto } from './dto/crear-detalle-envio.dto';
 import { AsignarRecursosDto } from './dto/asignar-recursos.dto';
+import { EnvioResponseDto } from './dto/envio-response.dto';
 
 @ApiTags('G5 - Envios')
 @Controller('envios')
@@ -40,6 +41,26 @@ export class EnviosController {
   obtenerTracking(@Param('id', ParseIntPipe) id: number) {
     return this.enviosService.obtenerTracking(id);
   }
+
+  @Get('venta/:idVenta')
+  @ApiOperation({ summary: 'Obtener envío por ID de venta' })
+  @ApiParam({ name: 'idVenta', type: Number, description: 'ID de la venta' })
+  @ApiResponse({ status: 200, description: 'Envío encontrado.', type: EnvioResponseDto })
+  @ApiResponse({ status: 404, description: 'No existe envío para esa venta.' })
+  obtenerPorVenta(@Param('idVenta', ParseIntPipe) idVenta: number) {
+    return this.enviosService.obtenerPorVenta(idVenta);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Obtener envío por ID' })
+  @ApiParam({ name: 'id', type: Number, description: 'ID del envío' })
+  @ApiResponse({ status: 200, description: 'Envío encontrado.', type: EnvioResponseDto })
+  @ApiResponse({ status: 404, description: 'Envío no encontrado o inactivo.' })
+  obtenerPorId(@Param('id', ParseIntPipe) id: number) {
+    return this.enviosService.obtenerPorId(id);
+  }
+
+
 
   @Post(':id/detalle')
   @HttpCode(HttpStatus.CREATED)
