@@ -16,6 +16,7 @@ model alertasingresostock {
   fechaalerta   DateTime?      @default(now()) @db.Timestamp(6)
   leida         Boolean?       @default(false)
   tipo          String?        @db.VarChar
+  idproducto    Int?
   ingresosstock ingresosstock? @relation(fields: [idingreso], references: [idingreso], onDelete: NoAction, onUpdate: NoAction)
 }
 
@@ -29,17 +30,17 @@ model carritovirtual {
 }
 
 model choferes {
-  idchofer          Int         @id @default(autoincrement())
-  nombre            String      @db.VarChar(100)
-  apellido          String      @db.VarChar(100)
-  dni               String      @unique @db.VarChar(20)
-  telefono          String?     @db.VarChar(50)
-  email             String?     @db.VarChar(100)
-  licenciaconducir  String      @db.VarChar(50)
-  fechavenclicencia DateTime    @db.Timestamp(6)
-  estado            String?     @default("Activo") @db.VarChar(50)
-  activo            Boolean?    @default(true)
-  vehiculos         vehiculos[]
+  idchofer          Int               @id @default(autoincrement())
+  nombre            String            @db.VarChar(100)
+  apellido          String            @db.VarChar(100)
+  dni               String            @unique @db.VarChar(20)
+  telefono          String?           @db.VarChar(50)
+  email             String?           @db.VarChar(100)
+  licenciaconducir  String            @db.VarChar(50)
+  fechavenclicencia DateTime          @db.Timestamp(6)
+  estado            String?           @default("Activo") @db.VarChar(50)
+  activo            Boolean?          @default(true)
+  asignacionenvio   asignacionenvio[]
 }
 
 model Usuario {
@@ -128,17 +129,18 @@ model detalleventas {
 }
 
 model envios {
-  idenvio            Int       @id @default(autoincrement())
+  idenvio            Int              @id @default(autoincrement())
   idventa            Int
-  idruta             Int?
-  direccionentrega   String    @db.VarChar(200)
-  fechaenvio         DateTime? @default(now()) @db.Timestamp(6)
-  estado             String?   @default("Pendiente") @db.VarChar(50)
-  observaciones      String?   @db.VarChar(255)
-  comprobanteentrega String?   @db.VarChar(255)
-  activo             Boolean?  @default(true)
-  rutas              rutas?    @relation(fields: [idruta], references: [idruta], onDelete: NoAction, onUpdate: NoAction)
-  ventas             ventas    @relation(fields: [idventa], references: [idventa], onDelete: NoAction, onUpdate: NoAction)
+  direccionentrega   String           @db.VarChar(200)
+  fechaenvio         DateTime?        @default(now()) @db.Timestamp(6)
+  estado             String?          @default("Preparado") @db.VarChar(50)
+  observaciones      String?          @db.VarChar(255)
+  comprobanteentrega String?          @db.VarChar(255)
+  activo             Boolean?         @default(true)
+  asignacionenvio    asignacionenvio?
+  detalleenvio       detalleenvio[]
+  ventas             ventas           @relation(fields: [idventa], references: [idventa], onDelete: NoAction, onUpdate: NoAction)
+  trackingenvio      trackingenvio[]
 }
 
 model ingresosstock {
@@ -178,6 +180,7 @@ model productos {
   stockactual         Int?                  @default(0)
   puntoreposicion     Int?                  @default(5)
   carritovirtual      carritovirtual[]
+  detalleenvio        detalleenvio[]
   detalleingresostock detalleingresostock[]
   detalleordencompra  detalleordencompra[]
   detallepromocion    detallepromocion[]
@@ -192,8 +195,8 @@ model promociones {
   fechadesde       DateTime           @db.Timestamp(6)
   fechahasta       DateTime           @db.Timestamp(6)
   activa           Boolean?           @default(true)
-  esGeneral        Boolean            @default(false)
   eliminada        Boolean            @default(false)
+  esGeneral        Boolean            @default(false)
   cupones          cupones[]
   detallepromocion detallepromocion[]
 }
@@ -221,16 +224,14 @@ model puntoscliente {
 }
 
 model rutas {
-  idruta        Int        @id @default(autoincrement())
-  nombreruta    String     @db.VarChar(100)
-  zona          String     @db.VarChar(100)
-  fecharuta     DateTime   @db.Timestamp(6)
-  estado        String?    @default("Pendiente") @db.VarChar(50)
-  idvehiculo    Int?
-  observaciones String?    @db.VarChar(255)
-  activo        Boolean?   @default(true)
-  envios        envios[]
-  vehiculos     vehiculos? @relation(fields: [idvehiculo], references: [idvehiculo], onDelete: NoAction, onUpdate: NoAction)
+  idruta          Int               @id @default(autoincrement())
+  nombreruta      String            @db.VarChar(100)
+  zona            String            @db.VarChar(100)
+  fecharuta       DateTime          @db.Timestamp(6)
+  estado          String?           @default("Pendiente") @db.VarChar(50)
+  observaciones   String?           @db.VarChar(255)
+  activo          Boolean?          @default(true)
+  asignacionenvio asignacionenvio[]
 }
 
 model usocupones {
@@ -243,17 +244,15 @@ model usocupones {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model vehiculos {
-  idvehiculo     Int       @id @default(autoincrement())
-  patente        String    @unique @db.VarChar(20)
-  marca          String    @db.VarChar(100)
-  modelo         String    @db.VarChar(100)
-  anio           Int
-  capacidadcarga Decimal?  @db.Decimal(10, 2)
-  estado         String?   @default("Disponible") @db.VarChar(50)
-  idchofer       Int?
-  activo         Boolean?  @default(true)
-  rutas          rutas[]
-  choferes       choferes? @relation(fields: [idchofer], references: [idchofer], onDelete: NoAction, onUpdate: NoAction)
+  idvehiculo      Int               @id @default(autoincrement())
+  patente         String            @unique @db.VarChar(20)
+  marca           String            @db.VarChar(100)
+  modelo          String            @db.VarChar(100)
+  anio            Int
+  capacidadcarga  Decimal?          @db.Decimal(10, 2)
+  estado          String?           @default("Disponible") @db.VarChar(50)
+  activo          Boolean?          @default(true)
+  asignacionenvio asignacionenvio[]
 }
 
 model ventas {
@@ -272,6 +271,38 @@ model ventas {
   puntoscliente           puntoscliente[]
   usocupones              usocupones[]
   clientes                clientes                  @relation(fields: [idcliente], references: [idcliente], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model asignacionenvio {
+  idasignacion    Int       @id @default(autoincrement())
+  idenvio         Int       @unique
+  idvehiculo      Int
+  idchofer        Int
+  idruta          Int
+  fechaasignacion DateTime? @default(now()) @db.Timestamp(6)
+  choferes        choferes  @relation(fields: [idchofer], references: [idchofer], onDelete: NoAction, onUpdate: NoAction, map: "fk_asig_chofer")
+  envios          envios    @relation(fields: [idenvio], references: [idenvio], onDelete: NoAction, onUpdate: NoAction, map: "fk_asig_envio")
+  rutas           rutas     @relation(fields: [idruta], references: [idruta], onDelete: NoAction, onUpdate: NoAction, map: "fk_asig_ruta")
+  vehiculos       vehiculos @relation(fields: [idvehiculo], references: [idvehiculo], onDelete: NoAction, onUpdate: NoAction, map: "fk_asig_vehiculo")
+}
+
+model detalleenvio {
+  iddetalleenvio Int       @id @default(autoincrement())
+  idenvio        Int
+  idproducto     Int
+  cantidad       Int
+  envios         envios    @relation(fields: [idenvio], references: [idenvio], onDelete: NoAction, onUpdate: NoAction, map: "fk_detenv_envio")
+  productos      productos @relation(fields: [idproducto], references: [idproducto], onDelete: NoAction, onUpdate: NoAction, map: "fk_detenv_producto")
+}
+
+model trackingenvio {
+  idtracking     Int       @id @default(autoincrement())
+  idenvio        Int
+  estadoanterior String?   @db.VarChar(50)
+  estadonuevo    String    @db.VarChar(50)
+  fechacambio    DateTime? @default(now()) @db.Timestamp(6)
+  observaciones  String?   @db.VarChar(255)
+  envios         envios    @relation(fields: [idenvio], references: [idenvio], onDelete: NoAction, onUpdate: NoAction, map: "fk_track_envio")
 }
 
 enum TipoUsuario {
