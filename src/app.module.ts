@@ -15,10 +15,13 @@ import { OrdenesCompraModule } from './ordenes-compra/ordenes-compra.module';
 import { AlertasStockModule } from './alertas-stock/alertas-stock.module';
 import { IngresosStockModule } from './ingresos-stock/ingresos-stock.module';
 import { EnviosModule } from './envios/envios.module';
+import { VehiculosModule } from './vehiculos/vehiculos.module';
+import { ChoferesModule } from './choferes/choferes.module';
+import { RutasModule } from './rutas/rutas.module';
 
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, CuponesModule, PromocionesModule, ClientesModule, VentasModule, ProductosModule, UsuariosModule, ProveedoresModule, OrdenesCompraModule, AlertasStockModule, IngresosStockModule, EnviosModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, CuponesModule, PromocionesModule, ClientesModule, VentasModule, ProductosModule, UsuariosModule, ProveedoresModule, OrdenesCompraModule, AlertasStockModule, IngresosStockModule, EnviosModule, VehiculosModule, ChoferesModule, RutasModule],
   controllers: [AppController],
   providers: [AppService, PrismaService],
   exports: [PrismaService],

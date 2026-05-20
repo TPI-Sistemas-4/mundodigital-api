@@ -4,8 +4,9 @@ import { EnviosService } from './envios.service';
 import { CrearEnvioDto } from './dto/crear-envio.dto';
 import { ActualizarEstadoEnvioDto } from './dto/actualizar-estado-envio.dto';
 import { CrearDetalleEnvioDto } from './dto/crear-detalle-envio.dto';
+import { AsignarRecursosDto } from './dto/asignar-recursos.dto';
 
-@ApiTags('Envios')
+@ApiTags('G5 - Envios')
 @Controller('envios')
 export class EnviosController {
   constructor(private readonly enviosService: EnviosService) {}
@@ -51,5 +52,18 @@ export class EnviosController {
     @Body() dto: CrearDetalleEnvioDto,
   ) {
     return this.enviosService.registrarDetalle(id, dto);
+  }
+
+  @Post(':id/asignacion')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Asignar vehículo, chofer y ruta a un envío' })
+  @ApiResponse({ status: 201, description: 'Recursos asignados correctamente.' })
+  @ApiResponse({ status: 400, description: 'Recurso inexistente o inactivo.' })
+  @ApiResponse({ status: 404, description: 'Envío no encontrado.' })
+  asignarRecursos(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: AsignarRecursosDto,
+  ) {
+    return this.enviosService.asignarRecursos(id, dto);
   }
 }
