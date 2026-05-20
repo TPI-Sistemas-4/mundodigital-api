@@ -14,10 +14,11 @@ import { ProveedoresModule } from './proveedores/proveedores.module';
 import { OrdenesCompraModule } from './ordenes-compra/ordenes-compra.module';
 import { AlertasStockModule } from './alertas-stock/alertas-stock.module';
 import { IngresosStockModule } from './ingresos-stock/ingresos-stock.module';
+import { EnviosModule } from './envios/envios.module';
 
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, CuponesModule, PromocionesModule, ClientesModule, VentasModule, ProductosModule, UsuariosModule, ProveedoresModule, OrdenesCompraModule, AlertasStockModule, IngresosStockModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, CuponesModule, PromocionesModule, ClientesModule, VentasModule, ProductosModule, UsuariosModule, ProveedoresModule, OrdenesCompraModule, AlertasStockModule, IngresosStockModule, EnviosModule],
   controllers: [AppController],
   providers: [AppService, PrismaService],
   exports: [PrismaService],
