@@ -17,6 +17,7 @@ model alertasingresostock {
   leida         Boolean?       @default(false)
   tipo          String?        @db.VarChar
   idproducto    Int?
+  resuelta      Boolean?       @default(false)
   ingresosstock ingresosstock? @relation(fields: [idingreso], references: [idingreso], onDelete: NoAction, onUpdate: NoAction)
 }
 
@@ -197,6 +198,7 @@ model promociones {
   activa           Boolean?           @default(true)
   eliminada        Boolean            @default(false)
   esGeneral        Boolean            @default(false)
+  updatedat        DateTime?          @default(now()) @db.Timestamp(6)
   cupones          cupones[]
   detallepromocion detallepromocion[]
 }
