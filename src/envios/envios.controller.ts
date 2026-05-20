@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { EnviosService } from './envios.service';
 import { CrearEnvioDto } from './dto/crear-envio.dto';
 import { ActualizarEstadoEnvioDto } from './dto/actualizar-estado-envio.dto';
+import { CrearDetalleEnvioDto } from './dto/crear-detalle-envio.dto';
 
 @ApiTags('Envios')
 @Controller('envios')
@@ -37,5 +38,18 @@ export class EnviosController {
   @ApiResponse({ status: 404, description: 'Envío no encontrado.' })
   obtenerTracking(@Param('id', ParseIntPipe) id: number) {
     return this.enviosService.obtenerTracking(id);
+  }
+
+  @Post(':id/detalle')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Registrar productos y cantidades del envío' })
+  @ApiResponse({ status: 201, description: 'Detalle registrado correctamente.' })
+  @ApiResponse({ status: 400, description: 'Productos inexistentes o detalle vacío.' })
+  @ApiResponse({ status: 404, description: 'Envío no encontrado.' })
+  registrarDetalle(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: CrearDetalleEnvioDto,
+  ) {
+    return this.enviosService.registrarDetalle(id, dto);
   }
 }
