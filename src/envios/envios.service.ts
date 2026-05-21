@@ -17,6 +17,21 @@ export class EnviosService {
     'Preparado': 'En Camino',
     'En Camino': 'Entregado',
   };
+
+  async findAll(estado?: string, activo?: boolean) {
+    return this.prisma.envios.findMany({
+      where: {
+        ...(estado !== undefined && { estado }),
+        ...(activo !== undefined && { activo }),
+      },
+      include: {
+        ventas:          { select: { idventa: true, fechaventa: true, total: true } },
+        asignacionenvio: { select: { idvehiculo: true, idchofer: true, idruta: true } },
+      },
+      orderBy: { fechaenvio: 'desc' },
+    });
+  }
+
   // ─── HU1: Registrar envío ─────────────────────────────────────────────────
   async registrar(dto: CrearEnvioDto): Promise<EnvioResponseDto> {
     // CA: validar que la venta exista
@@ -43,7 +58,7 @@ export class EnviosService {
         idventa:          dto.idventa,
         direccionentrega: dto.direccionentrega,
         observaciones:    dto.observaciones ?? null,
-        estado:           'Generado',
+        estado:           'Preparado',
         activo:           true,
       },
     });
