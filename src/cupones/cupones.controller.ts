@@ -1,6 +1,6 @@
-import { Controller, Post, Get, Param, Body, ParseIntPipe } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Param, Body, ParseIntPipe } from '@nestjs/common';
 import { CuponesService } from './cupones.service';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateCuponDto } from './dto/create-cupon.dto';
 
 @ApiTags('G4 - Cupones')
@@ -8,27 +8,33 @@ import { CreateCuponDto } from './dto/create-cupon.dto';
 export class CuponesController {
     constructor(private readonly cuponesService: CuponesService) { }
 
-    /** POST /cupones — Registrar un cupón */
     @Post()
+    @ApiOperation({summary: 'Registrar un cupón'})
     create(@Body() dto: CreateCuponDto) {
         return this.cuponesService.create(dto);
     }
 
-    /** GET /cupones/generar-codigo — Obtener un código único sugerido */
     @Get('generar-codigo')
+    @ApiOperation({ summary: 'Generar-codigo — Obtener un código único sugerido' })
     generarCodigo() {
         return this.cuponesService.generarCodigo();
     }
 
-    /** GET /cupones — Listar todos los cupones activos */
     @Get()
+    @ApiOperation({summary: 'Listar todos los cupones activos'})
     findAll() {
         return this.cuponesService.findAll();
     }
 
-    /** GET /cupones/:id — Obtener un cupón por id */
     @Get(':id')
+    @ApiOperation({summary: 'Obtener un cupón por id'})
     findOne(@Param('id', ParseIntPipe) id: number) {
         return this.cuponesService.findOne(id);
+    }
+
+    @Patch(':id/anular')
+    @ApiOperation({summary: 'Anular (soft delete) un cupon'})
+    anular(@Param('id', ParseIntPipe) id: number) {
+        return this.cuponesService.anular(id);
     }
 }

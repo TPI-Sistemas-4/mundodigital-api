@@ -120,5 +120,44 @@ export class CuponesService {
 
         return { codigo };
     }
+
+    async anular(id: number) {
+        // 1. Verificar que existe
+        const cupon = await this.prismaService.cupones.findUnique({
+            where: { idcupon: id },
+            include: { usocupones: true },
+        });
+        if (!cupon) throw new NotFoundException(`Cupon ${id} no encontrado.`);
+
+        // 2. Si ya fue utilizado y ya esta inactivo, no tiene sentido volver a anular
+        if (!cupon.activo) {
+            throw new BadRequestException(
+                `El cupon "${cupon.codigo}" ya se encuentra anulado.`,
+            );
+        }
+
+        // 3. Soft delete — desactiva y deja el historial intacto
+        const actualizado = await this.prismaService.cupones.update({
+            where: { idcupon: id },
+            data: { activo: false },
+            include: {
+                clientes: {
+                    select: { idcliente: true, nombre: true, apellido: true, email: true },
+                },
+                promociones: {
+                    select: { idpromocion: true, nombre: true },
+                },
+                usocupones: true,
+            },
+        });
+
+        const usos = cupon.usocupones.length;
+        return {
+            ...actualizado,
+            mensaje: usos > 0
+                ? `Cupon "${cupon.codigo}" anulado. Tiene ${usos} uso(s) registrado(s) en el historial.`
+                : `Cupon "${cupon.codigo}" anulado correctamente.`,
+        };
+    }
 }
 
