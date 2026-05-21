@@ -1,5 +1,5 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Param, ParseIntPipe, Get, Patch } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { Controller, Post, Body, HttpCode, HttpStatus, Param, ParseIntPipe, Get, Patch, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { EnviosService } from './envios.service';
 import { CrearEnvioDto } from './dto/crear-envio.dto';
 import { ActualizarEstadoEnvioDto } from './dto/actualizar-estado-envio.dto';
@@ -11,6 +11,18 @@ import { EnvioResponseDto } from './dto/envio-response.dto';
 @Controller('envios')
 export class EnviosController {
   constructor(private readonly enviosService: EnviosService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Listar envíos. Filtrar por estado y/o activo' })
+  @ApiQuery({ name: 'estado', required: false, enum: ['Preparado', 'En Camino', 'Entregado'] })
+  @ApiQuery({ name: 'activo', required: false, type: Boolean })
+  async findAll(
+    @Query('estado') estado?: string,
+    @Query('activo') activo?: string,
+  ) {
+    const activoBool = activo !== undefined ? activo === 'true' : undefined;
+    return this.enviosService.findAll(estado, activoBool);
+  }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
