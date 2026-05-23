@@ -1,6 +1,7 @@
 import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import { CreateCuponDto } from './dto/create-cupon.dto';
+import { UpdateCuponDto } from './dto/update-cupon.dto';
 
 @Injectable()
 export class CuponesService {
@@ -159,5 +160,57 @@ export class CuponesService {
                 : `Cupon "${cupon.codigo}" anulado correctamente.`,
         };
     }
+
+    async update(id: number, dto: UpdateCuponDto) {
+        // 1. Verificar que existe
+        const cupon = await this.prismaService.cupones.findUnique({
+            where: { idcupon: id },
+            include: { promociones: { include: { detallepromocion: true } } },
+        });
+        if (!cupon) throw new NotFoundException(`Cupon ${id} no encontrado.`);
+        if (!cupon.activo) throw new BadRequestException(`No se puede modificar un cupon anulado.`);
+
+        // 2. Validar cliente si se envía
+        if (dto.idcliente !== undefined && dto.idcliente !== null) {
+            const cliente = await this.prismaService.clientes.findUnique({
+                where: { idcliente: dto.idcliente },
+            });
+            if (!cliente || !cliente.activo) {
+                throw new NotFoundException(`Cliente ${dto.idcliente} no encontrado o inactivo.`);
+            }
+        }
+
+        // 3. Si tiene promocion asociada, descuento y fecha vienen de ella (no se editan)
+        const data: Record<string, unknown> = {};
+
+        if (cupon.idpromocion && cupon.promociones) {
+            const promo = cupon.promociones;
+            // Respetar reglas de negocio de la promocion
+            data.descuentoporcentaje = promo.detallepromocion[0]?.descuentoporcentaje ?? cupon.descuentoporcentaje;
+            data.fechavencimiento = promo.fechahasta;
+        } else {
+            // Sin promocion: se permite editar descuento y fecha
+            if (dto.descuentoporcentaje !== undefined) data.descuentoporcentaje = dto.descuentoporcentaje;
+            if (dto.fechavencimiento !== undefined) data.fechavencimiento = new Date(dto.fechavencimiento);
+        }
+
+        // 4. Cliente: null = general para todos, numero = cliente especifico
+        if (dto.idcliente !== undefined) data.idcliente = dto.idcliente ?? null;
+
+        // 5. Estado
+        if (dto.activo !== undefined) data.activo = dto.activo;
+
+        const actualizado = await this.prismaService.cupones.update({
+            where: { idcupon: id },
+            data,
+            include: {
+                clientes: { select: { idcliente: true, nombre: true, apellido: true, email: true } },
+                promociones: { select: { idpromocion: true, nombre: true } },
+            },
+        });
+
+        return actualizado;
+    }
+
 }
 
