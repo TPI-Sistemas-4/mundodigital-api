@@ -176,13 +176,13 @@ export class PromocionesService {
                 descripcion: dto.descripcion,
                 fechadesde: fechaDesde,
                 fechahasta: fechaHasta,
+                updatedat: new Date(),
                 ...(dto.esGeneral !== undefined && {
                     esGeneral: dto.esGeneral,
                 }),
                 ...(dto.activa !== undefined && {
                     activa: dto.activa,
                 }),
-
             },
         });
 
