@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, ParseIntPipe, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, ParseIntPipe, Query, Patch } from '@nestjs/common';
 import { VentasService } from './ventas.service';
 import { CreateVentaDto } from './dto/create.venta.dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -32,5 +32,14 @@ export class VentasController {
     @ApiResponse({ status: 404, description: 'Venta no encontrada.' })
     async findOne(@Param('id', ParseIntPipe) id: number) {
         return await this.ventasService.findOne(id);
+    }
+
+    @Patch(':id/cancelar')
+    @ApiOperation({ summary: 'Cancelar una venta en estado Pendiente de entrega' })
+    @ApiResponse({ status: 200, description: 'Venta cancelada y stock restaurado.' })
+    @ApiResponse({ status: 400, description: 'La venta no está en estado Pendiente de entrega.' })
+    @ApiResponse({ status: 404, description: 'Venta no encontrada.' })
+    async cancelar(@Param('id', ParseIntPipe) id: number) {
+    return await this.ventasService.cancelar(id);
     }
 }
