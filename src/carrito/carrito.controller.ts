@@ -1,4 +1,4 @@
-import { Controller, Delete, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Delete, Get, Param, ParseIntPipe } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CarritoService } from './carrito.service';
 
@@ -13,5 +13,13 @@ export class CarritoController {
   @ApiResponse({ status: 404, description: 'Cliente no encontrado.' })
   async vaciar(@Param('idCliente', ParseIntPipe) idCliente: number) {
     return await this.carritoService.vaciar(idCliente);
+  }
+
+  @Get(':idCliente')
+  @ApiOperation({ summary: 'Visualizar carrito virtual de un cliente' })
+  @ApiResponse({ status: 200, description: 'Ítems actuales del carrito con subtotales.' })
+  @ApiResponse({ status: 404, description: 'Cliente no encontrado.' })
+  async findByCliente(@Param('idCliente', ParseIntPipe) idCliente: number) {
+  return await this.carritoService.findByCliente(idCliente);
   }
 }
