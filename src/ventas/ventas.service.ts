@@ -255,4 +255,37 @@ export class VentasService {
       }
     }
 
+    async cancelar(idVenta: number) {
+      // CA: validar que la venta exista
+      const venta = await this.prismaService.ventas.findUnique({
+        where: { idventa: idVenta },
+      });
+      if (!venta) {
+        throw new NotFoundException(`Venta ${idVenta} no encontrada`);
+      }
+
+      // CA: solo se pueden cancelar ventas en estado "Pendiente de entrega"
+      if (venta.estado !== EstadoVenta.PENDIENTE) {
+        throw new BadRequestException(
+          `Solo se pueden cancelar ventas en estado "Pendiente de entrega". ` +
+          `Estado actual: "${venta.estado}"`,
+        );
+      }
+
+      // CA: transacción — cambiar estado y restaurar stock atomicamente
+      return await this.prismaService.$transaction(async (tx) => {
+        // Cambiar estado a cancelada
+        const ventaCancelada = await tx.ventas.update({
+          where: { idventa: idVenta },
+          data:  { estado: EstadoVenta.CANCELADA },
+          include: { detalleventas: true },
+        });
+
+        // CA: restaurar stock de cada producto (HU19)
+        await this.restaurarStock(idVenta, tx);
+
+        return ventaCancelada;
+      });
+    }
+
 }
