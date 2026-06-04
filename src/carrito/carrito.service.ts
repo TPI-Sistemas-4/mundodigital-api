@@ -140,4 +140,19 @@ export class CarritoService {
       data:  { cantidad: dto.cantidad },
     });
   }
+
+  async eliminarItem(idCarrito: number) {
+    const item = await this.prismaService.carritovirtual.findUnique({
+      where: { idcarrito: idCarrito },
+    });
+    if (!item) {
+      throw new NotFoundException(`Ítem de carrito ${idCarrito} no encontrado`);
+    }
+  
+    await this.prismaService.carritovirtual.delete({
+      where: { idcarrito: idCarrito },
+    });
+  
+    return { message: `Ítem ${idCarrito} eliminado del carrito correctamente` };
+  }
 }
