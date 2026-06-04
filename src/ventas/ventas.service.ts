@@ -175,6 +175,26 @@ export class VentasService {
 
       return ventaCompleta;
       
-    } 
+    }
+    
+    async findOne(id: number) {
+      const venta = await this.prismaService.ventas.findUnique({
+        where: { idventa: id },
+        include: {
+          detalleventas: {
+            include: {
+              productos: true, // nombre y precio del producto
+            },
+          },
+          clientes: true, // datos del cliente asociado
+        },
+      });
+
+      if (!venta) {
+        throw new NotFoundException(`Venta ${id} no encontrada`);
+      }
+
+      return venta;
+    }
 
 }
