@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, ParseIntPipe } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ClientesService } from './clientes.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
+import { UpdateClienteDto } from './dto/update-cliente.dto';
 
 @ApiTags('G1 - Ventas')
 @Controller('clientes')
@@ -21,4 +22,16 @@ export class ClientesController {
   async create(@Body() dto: CreateClienteDto) {
     return await this.clientesService.create(dto);
   }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Modificar datos de un cliente' })
+  @ApiResponse({ status: 200, description: 'Cliente actualizado correctamente.' })
+  @ApiResponse({ status: 400, description: 'Email ya en uso por otro cliente.' })
+  @ApiResponse({ status: 404, description: 'Cliente no encontrado.' })
+  async update(
+  @Param('id', ParseIntPipe) id: number,
+  @Body() dto: UpdateClienteDto,
+    ) {
+    return await this.clientesService.update(id, dto);
+    }
 }
