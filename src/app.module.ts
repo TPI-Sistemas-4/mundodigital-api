@@ -19,10 +19,11 @@ import { EnviosModule } from './envios/envios.module';
 import { VehiculosModule } from './vehiculos/vehiculos.module';
 import { ChoferesModule } from './choferes/choferes.module';
 import { RutasModule } from './rutas/rutas.module';
+import { CarritoModule } from './carrito/carrito.module';
 
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, CuponesModule, PromocionesModule, ClientesModule, VentasModule, ProductosModule, UsuariosModule, ProveedoresModule, PuntosModule, OrdenesCompraModule, AlertasStockModule, IngresosStockModule, EnviosModule, VehiculosModule, ChoferesModule, RutasModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, CuponesModule, PromocionesModule, ClientesModule, VentasModule, ProductosModule, UsuariosModule, ProveedoresModule, PuntosModule, OrdenesCompraModule, AlertasStockModule, IngresosStockModule, EnviosModule, VehiculosModule, ChoferesModule, RutasModule, CarritoModule],
   controllers: [AppController],
   providers: [AppService, PrismaService],
   exports: [PrismaService],
