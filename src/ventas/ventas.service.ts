@@ -242,4 +242,17 @@ export class VentasService {
       return { data: ventas };
     }
 
+    async restaurarStock(idVenta: number, tx: any) {
+      const detalles = await tx.detalleventas.findMany({
+        where: { idventa: idVenta },
+      });
+
+      for (const detalle of detalles) {
+        await tx.productos.update({
+          where: { idproducto: detalle.idproducto },
+          data:  { stockactual: { increment: detalle.cantidad } },
+        });
+      }
+    }
+
 }
