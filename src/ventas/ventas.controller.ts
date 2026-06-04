@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, ParseIntPipe, Query } from '@nestjs/common';
 import { VentasService } from './ventas.service';
 import { CreateVentaDto } from './dto/create.venta.dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { FilterVentaDto } from './dto/filter-venta.dto';
 
 @ApiTags('G1 - Ventas')
 @Controller('ventas')
@@ -18,11 +19,18 @@ export class VentasController {
         return await this.ventasService.create(createVentaDto);
     }
 
+    @Get('filtrar')
+    @ApiOperation({ summary: 'Filtrar ventas por cliente, fecha o estado' })
+    @ApiResponse({ status: 200, description: 'Listado de ventas filtradas.' })
+    async filtrar(@Query() filters: FilterVentaDto) {
+        return await this.ventasService.findWithFilters(filters);
+    }
+
     @Get(':id')
     @ApiOperation({ summary: 'Visualizar detalle de una venta' })
     @ApiResponse({ status: 200, description: 'Detalle de la venta con productos y montos.' })
     @ApiResponse({ status: 404, description: 'Venta no encontrada.' })
     async findOne(@Param('id', ParseIntPipe) id: number) {
-    return await this.ventasService.findOne(id);
+        return await this.ventasService.findOne(id);
     }
 }
