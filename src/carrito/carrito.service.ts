@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import { AddItemCarritoDto } from './dto/add-item-carrito.dto';
+import { UpdateItemCarritoDto } from './dto/update-item-carrito.dto';
 
 @Injectable()
 export class CarritoService {
@@ -113,4 +114,30 @@ export class CarritoService {
         },
     });
     }
+
+  async modificarCantidad(idCarrito: number, dto: UpdateItemCarritoDto) {
+    // Validar que el ítem exista
+    const item = await this.prismaService.carritovirtual.findUnique({
+      where: { idcarrito: idCarrito },
+    });
+    if (!item) {
+      throw new NotFoundException(`Ítem de carrito ${idCarrito} no encontrado`);
+    }
+  
+    // Validar stock disponible para la nueva cantidad
+    const producto = await this.prismaService.productos.findUnique({
+      where: { idproducto: item.idproducto },
+    });
+    if ((producto?.stockactual ?? 0) < dto.cantidad) {
+      throw new BadRequestException(
+        `Stock insuficiente para "${producto?.nombre}": ` +
+        `disponible ${producto?.stockactual}, solicitado ${dto.cantidad}`,
+      );
+    }
+  
+    return await this.prismaService.carritovirtual.update({
+      where: { idcarrito: idCarrito },
+      data:  { cantidad: dto.cantidad },
+    });
+  }
 }
