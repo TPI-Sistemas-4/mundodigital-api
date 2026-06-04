@@ -6,6 +6,7 @@ import {
 import { PrismaService } from 'src/prisma.service';
 import { CreateVentaDto, EstadoVenta } from './dto/create.venta.dto';
 import { EnviosService } from 'src/envios/envios.service';
+import { FilterVentaDto } from './dto/filter-venta.dto';
 @Injectable()
 export class VentasService {
   constructor(private readonly prismaService: PrismaService, private readonly enviosService: EnviosService) {}
@@ -169,7 +170,7 @@ export class VentasService {
           observaciones:    'Envío generado automáticamente',
         });
         console.log('[VentasService] Envío creado:', envio);
-      } catch (error) {
+      } catch (error:any) {
         console.error('[VentasService] Error al crear envío:', error.message);
       }
 
@@ -195,6 +196,50 @@ export class VentasService {
       }
 
       return venta;
+    }
+
+    async findWithFilters(filters: FilterVentaDto) {
+      const where: any = {};
+
+      // CA: filtrar por cliente
+      if (filters.idCliente) {
+        where.idcliente = filters.idCliente;
+      }
+
+      // CA: filtrar por fecha
+      if (filters.fechaDesde || filters.fechaHasta) {
+        where.fechaventa = {};
+        if (filters.fechaDesde) {
+          where.fechaventa.gte = new Date(filters.fechaDesde);
+        }
+        if (filters.fechaHasta) {
+          // CA: incluir todo el día hasta las 23:59:59
+          const hasta = new Date(filters.fechaHasta);
+          hasta.setHours(23, 59, 59, 999);
+          where.fechaventa.lte = hasta;
+        }
+      }
+
+      // CA: filtrar por estado
+      if (filters.estado) {
+        where.estado = filters.estado;
+      }
+
+      const ventas = await this.prismaService.ventas.findMany({
+        where,
+        include: { detalleventas: true },
+        orderBy: { fechaventa: 'desc' },
+      });
+
+      // CA: si no hay resultados, retornar mensaje informativo
+      if (ventas.length === 0) {
+        return {
+          message: 'No se encontraron ventas con los filtros seleccionados',
+          data: [],
+        };
+      }
+
+      return { data: ventas };
     }
 
 }
