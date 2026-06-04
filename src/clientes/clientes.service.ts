@@ -1,6 +1,7 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
+import { UpdateClienteDto } from './dto/update-cliente.dto';
 
 @Injectable()
 export class ClientesService {
@@ -32,4 +33,38 @@ export class ClientesService {
       },
     });
   }
+
+  async update(id: number, dto: UpdateClienteDto) {
+    // CA: el cliente debe existir antes de modificarlo
+    const cliente = await this.prismaService.clientes.findUnique({
+        where: { idcliente: id },
+    });
+    if (!cliente) {
+        throw new NotFoundException(`Cliente ${id} no encontrado`);
+    }
+
+    // CA: si se modifica el email, validar que no esté en uso por otro cliente
+    if (dto.email && dto.email !== cliente.email) {
+        const emailEnUso = await this.prismaService.clientes.findUnique({
+        where: { email: dto.email },
+        });
+        if (emailEnUso) {
+        throw new BadRequestException(
+            `El email ${dto.email} ya está registrado en otro cliente`,
+        );
+        }
+    }
+
+    return await this.prismaService.clientes.update({
+        where: { idcliente: id },
+        data: {
+        nombre:    dto.nombre,
+        apellido:  dto.apellido,
+        email:     dto.email,
+        telefono:  dto.telefono,
+        direccion: dto.direccion,
+        activo:    dto.activo,
+        },
+    });
+    }
 }
