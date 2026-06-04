@@ -48,4 +48,12 @@ export class CarritoController {
   ) {
     return await this.carritoService.modificarCantidad(idCarrito, dto);
   }
+
+  @Delete('item/:idCarrito')
+  @ApiOperation({ summary: 'Eliminar un producto del carrito virtual' })
+  @ApiResponse({ status: 200, description: 'Ítem eliminado del carrito.' })
+  @ApiResponse({ status: 404, description: 'Ítem de carrito no encontrado.' })
+  async eliminarItem(@Param('idCarrito', ParseIntPipe) idCarrito: number) {
+    return await this.carritoService.eliminarItem(idCarrito);
+  }
 }
