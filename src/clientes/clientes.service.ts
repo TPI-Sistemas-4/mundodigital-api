@@ -66,5 +66,25 @@ export class ClientesService {
         activo:    dto.activo,
         },
     });
+  }
+
+  async findOne(id: number) {
+    const cliente = await this.prismaService.clientes.findUnique({
+        where: { idcliente: id },
+        include: {
+        ventas: {
+            include: {
+            detalleventas: true,
+            },
+            orderBy: { fechaventa: 'desc' }, // más recientes primero
+        },
+        },
+    });
+
+    if (!cliente) {
+        throw new NotFoundException(`Cliente ${id} no encontrado`);
+    }
+
+    return cliente;
     }
 }

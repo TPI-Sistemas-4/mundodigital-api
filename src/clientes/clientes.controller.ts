@@ -33,5 +33,13 @@ export class ClientesController {
   @Body() dto: UpdateClienteDto,
     ) {
     return await this.clientesService.update(id, dto);
-    }
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Consultar perfil de cliente con historial de ventas' })
+  @ApiResponse({ status: 200, description: 'Perfil del cliente con historial.' })
+  @ApiResponse({ status: 404, description: 'Cliente no encontrado.' })
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    return await this.clientesService.findOne(id);
+  }
 }
