@@ -138,4 +138,24 @@ export class OrdenesCompraService {
       ],
     };
   }
+
+  // HU5 - Solo se pueden cancelar órdenes en estado "Generada"
+  // Cancelada y Recibida son estados finales, no se pueden revertir
+  async cancelar(id: number) {
+    const orden = await this.findOne(id);
+
+    if (orden.estado !== 'Generada') {
+      throw new BadRequestException(
+        `La orden #${id} no puede cancelarse porque está en estado "${orden.estado}"`
+      );
+    }
+
+    return this.prisma.ordenescompra.update({
+      where: { idorden: id },
+      data: { estado: 'Cancelada' },
+      include: {
+        proveedores: { select: { idproveedor: true, razonsocial: true } },
+      },
+    });
+  }
 }
