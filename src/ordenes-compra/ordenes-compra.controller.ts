@@ -11,8 +11,8 @@ export class OrdenesCompraController {
 
   // RN03 - Listado de órdenes con filtro opcional por estado
   @Get()
-  @ApiOperation({ summary: 'Listar órdenes de compra. Filtrar por estado: Generada | Recibida' })
-  @ApiQuery({ name: 'estado', required: false, enum: ['Generada', 'Recibida'] })
+  @ApiOperation({ summary: 'Listar órdenes de compra. Filtrar por estado: Generada | Recibida | Cancelada' })
+  @ApiQuery({ name: 'estado', required: false, enum: ['Generada', 'Recibida', 'Cancelada'] })
   findAll(@Query('estado') estado?: string) {
     return this.ordenesCompraService.findAll(estado);
   }
