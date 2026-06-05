@@ -50,4 +50,10 @@ export class OrdenesCompraController {
   async getResumenEstados() {
     return this.ordenesCompraService.getResumenEstados();
   }
+
+  @Patch(':id/cancelar')
+  @ApiOperation({ summary: 'Cancelar una orden en estado Generada (HU5)' })
+  cancelar(@Param('id') id: string) {
+    return this.ordenesCompraService.cancelar(+id);
+  }
 }
