@@ -27,9 +27,9 @@ export class OrdenesCompraService {
 
     // RN-11 de Grupo-3: Recibida → Generada → Ingresada
     const prioridad: Record<string, number> = {
-      'Recibida':  0,
-      'Generada':  1,
-      'Ingresada': 2,
+      'Generada':  0,
+      'Recibida':  1,
+      'Cancelada': 2,
     };
 
     return ordenes.sort((a, b) => {
@@ -123,10 +123,10 @@ export class OrdenesCompraService {
       select: { estado: true },
     });
 
-    const resumen = { Generada: 0, Recibida: 0, Ingresada: 0 };
+    const resumen = { Generada: 0, Recibida: 0, Cancelada: 0 };
     ordenes.forEach((o) => {
       const estado = o.estado ?? 'Generada';
-      if (estado in resumen) resumen[estado]++;
+      if (estado in resumen) resumen[estado as keyof typeof resumen]++;
     });
 
     return {
@@ -134,8 +134,28 @@ export class OrdenesCompraService {
       distribucion: [
         { estado: 'Generada',  cantidad: resumen['Generada']  },
         { estado: 'Recibida',  cantidad: resumen['Recibida']  },
-        { estado: 'Ingresada', cantidad: resumen['Ingresada'] },
+        { estado: 'Cancelada', cantidad: resumen['Cancelada'] },
       ],
     };
+  }
+
+  // HU5 - Solo se pueden cancelar órdenes en estado "Generada"
+  // Cancelada y Recibida son estados finales, no se pueden revertir
+  async cancelar(id: number) {
+    const orden = await this.findOne(id);
+
+    if (orden.estado !== 'Generada') {
+      throw new BadRequestException(
+        `La orden #${id} no puede cancelarse porque está en estado "${orden.estado}"`
+      );
+    }
+
+    return this.prisma.ordenescompra.update({
+      where: { idorden: id },
+      data: { estado: 'Cancelada' },
+      include: {
+        proveedores: { select: { idproveedor: true, razonsocial: true } },
+      },
+    });
   }
 }
