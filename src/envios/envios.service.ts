@@ -16,8 +16,10 @@ export class EnviosService {
     'Generado':  'Preparado',
     'Preparado': 'En Camino',
     'En Camino': 'Entregado',
-    'Cancelado': 'Cancelado', // estado final, no permite transiciones
   };
+
+  // Estados finales — no admiten ninguna transición saliente
+  private readonly ESTADOS_FINALES = ['Entregado', 'Cancelado'];
 
   async findAll(estado?: string, activo?: boolean) {
     return this.prisma.envios.findMany({
@@ -83,19 +85,29 @@ export class EnviosService {
 
     const estadoActual = envio.estado ?? 'Preparado';
 
-    // CA: solo transiciones válidas
-    if (this.TRANSICIONES[estadoActual] !== dto.estadonuevo) {
+    // CA: estados finales no admiten ninguna transición saliente
+    if (this.ESTADOS_FINALES.includes(estadoActual)) {
       throw new BadRequestException(
-        `Transición inválida: ${estadoActual} → ${dto.estadonuevo}. ` +
-        `Desde "${estadoActual}" solo se puede pasar a "${this.TRANSICIONES[estadoActual] ?? 'ningún estado (ya es final)'}".`,
+        `El envío ya se encuentra en estado "${estadoActual}" y no admite más cambios.`,
       );
     }
 
-    // CA: para pasar a "En Camino" debe existir asignación
-    if (dto.estadonuevo === 'En Camino' && !envio.asignacionenvio) {
-      throw new BadRequestException(
-        `No se puede pasar a "En Camino" sin vehículo, chofer y ruta asignados.`,
-      );
+    // CA: Cancelado puede aplicarse desde cualquier estado no final
+    if (dto.estadonuevo !== 'Cancelado') {
+      // Para el resto, validar contra el mapa de transiciones
+      if (this.TRANSICIONES[estadoActual] !== dto.estadonuevo) {
+        throw new BadRequestException(
+          `Transición inválida: ${estadoActual} → ${dto.estadonuevo}. ` +
+          `Desde "${estadoActual}" solo se puede pasar a "${this.TRANSICIONES[estadoActual]}" o "Cancelado".`,
+        );
+      }
+
+      // CA: para pasar a "En Camino" debe existir asignación
+      if (dto.estadonuevo === 'En Camino' && !envio.asignacionenvio) {
+        throw new BadRequestException(
+          `No se puede pasar a "En Camino" sin vehículo, chofer y ruta asignados.`,
+        );
+      }
     }
 
     // Actualizar estado y registrar en tracking — transacción
