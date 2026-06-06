@@ -7,9 +7,10 @@ import { PrismaService } from 'src/prisma.service';
 import { CreateVentaDto, EstadoVenta } from './dto/create.venta.dto';
 import { EnviosService } from 'src/envios/envios.service';
 import { FilterVentaDto } from './dto/filter-venta.dto';
+import { PuntosService } from 'src/puntos/punto.service';
 @Injectable()
 export class VentasService {
-  constructor(private readonly prismaService: PrismaService, private readonly enviosService: EnviosService) {}
+  constructor(private readonly prismaService: PrismaService, private readonly enviosService: EnviosService, private readonly puntosService: PuntosService) {}
 
 
 
@@ -162,6 +163,13 @@ export class VentasService {
 
       console.log('[VentasService] Venta creada:', ventaCompleta.idventa);
       console.log('[VentasService] Llamando a enviosService.registrar...');
+
+      // Registrar puntos para el cliente
+      try {
+        const puntosResult = await this.puntosService.registrar({ idventa: ventaCompleta.idventa })
+      } catch (error:any) {
+        console.error('[VentasService] Error al registrar puntos:', error.message);
+      }
 
       try {
         const envio = await this.enviosService.registrar({
