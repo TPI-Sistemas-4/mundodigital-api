@@ -16,6 +16,7 @@ export class EnviosService {
     'Generado':  'Preparado',
     'Preparado': 'En Camino',
     'En Camino': 'Entregado',
+    'Cancelado': 'Cancelado', // estado final, no permite transiciones
   };
 
   async findAll(estado?: string, activo?: boolean) {

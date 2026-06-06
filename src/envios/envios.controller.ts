@@ -14,7 +14,7 @@ export class EnviosController {
 
   @Get()
   @ApiOperation({ summary: 'Listar envíos. Filtrar por estado y/o activo' })
-  @ApiQuery({ name: 'estado', required: false, enum: ['Preparado', 'En Camino', 'Entregado'] })
+  @ApiQuery({ name: 'estado', required: false, enum: ['Preparado', 'En Camino', 'Entregado', 'Cancelado'] })
   @ApiQuery({ name: 'activo', required: false, type: Boolean })
   async findAll(
     @Query('estado') estado?: string,
