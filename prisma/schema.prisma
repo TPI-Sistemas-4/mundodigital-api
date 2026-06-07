@@ -134,7 +134,7 @@ model envios {
   idventa            Int
   direccionentrega   String           @db.VarChar(200)
   fechaenvio         DateTime?        @default(now()) @db.Timestamp(6)
-  estado             String?          @default("Preparado") @db.VarChar(50)
+  estado             String?          @default("Generado") @db.VarChar(50)
   observaciones      String?          @db.VarChar(255)
   comprobanteentrega String?          @db.VarChar(255)
   activo             Boolean?         @default(true)
@@ -264,7 +264,7 @@ model ventas {
   subtotal                Decimal                   @db.Decimal(18, 2)
   descuento               Decimal?                  @default(0) @db.Decimal(18, 2)
   total                   Decimal                   @db.Decimal(18, 2)
-  estado                  estadoventa               @default(Pendiente_de_entrega)
+  estado                  estadoventa               @default(Confirmada)
   direccionentrega        String?                   @db.VarChar(200)
   indicacionesentrega     String?                   @db.VarChar(200)
   detalleventas           detalleventas[]
@@ -313,7 +313,7 @@ enum TipoUsuario {
 }
 
 enum estadoventa {
-  Pendiente_de_entrega @map("Pendiente de entrega")
-  Entregada            @map("Entregada")
-  Cancelada            @map("Cancelada")
+  Confirmada
+  Completada
+  Cancelada  @map("Cancelada")
 }
