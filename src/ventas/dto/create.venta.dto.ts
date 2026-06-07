@@ -14,8 +14,8 @@ import {
 } from 'class-validator';
 
 export enum EstadoVenta {
-  PENDIENTE = 'Pendiente_de_entrega',
-  ENTREGADA = 'Entregada',
+  CONFIRMADA = 'Confirmada',
+  COMPLETADA = 'Completada',
   CANCELADA = 'Cancelada',
 }
 
@@ -54,14 +54,14 @@ export class CreateVentaDto {
 
   @ApiPropertyOptional({
     enum: EstadoVenta,
-    default: EstadoVenta.PENDIENTE,
+    default: EstadoVenta.CONFIRMADA,
     description: 'RN06/RN07: Estado de la venta',
   })
   @IsOptional()
   @IsEnum(EstadoVenta, {
     message: `RN07: El estado debe ser uno de: ${Object.values(EstadoVenta).join(' | ')}`,
   })
-  estado?: EstadoVenta = EstadoVenta.PENDIENTE;
+  estado?: EstadoVenta = EstadoVenta.CONFIRMADA;
 
   @ApiProperty({
     type: [CreateDetalleVentaDto],
