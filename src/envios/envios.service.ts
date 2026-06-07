@@ -6,10 +6,11 @@ import { PrismaService } from 'src/prisma.service';
 import { ActualizarEstadoEnvioDto } from './dto/actualizar-estado-envio.dto';
 import { CrearDetalleEnvioDto } from './dto/crear-detalle-envio.dto';
 import { AsignarRecursosDto } from './dto/asignar-recursos.dto';
+import { VentasService } from 'src/ventas/ventas.service';
 
 @Injectable()
 export class EnviosService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly ventasService: VentasService) {}
 
   // Mapa de transiciones válidas (CA: solo se permiten estas)
   private readonly TRANSICIONES: Record<string, string> = {
@@ -126,6 +127,11 @@ export class EnviosService {
       }),
     ]);
 
+    // si el estado nuevo es "Entregado", actualizar el estado de la venta asociada a "Completada"
+    if (dto.estadonuevo === 'Entregado') {
+      await this.ventasService.actualizarEstado(envio.idventa, { estadonuevo: 'Completada' });
+    }
+    
     return this.mapResponse(envioActualizado);
   }
 

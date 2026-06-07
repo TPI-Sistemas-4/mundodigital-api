@@ -42,4 +42,14 @@ export class VentasController {
     async cancelar(@Param('id', ParseIntPipe) id: number) {
     return await this.ventasService.cancelar(id);
     }
+
+    // permitir actualizar el estado de una venta
+    @Patch(':id/estado')
+    @ApiOperation({ summary: 'Actualizar el estado de una venta' })
+    @ApiResponse({ status: 200, description: 'Estado de la venta actualizado.' })
+    @ApiResponse({ status: 400, description: 'Estado no válido o transición no permitida.' })
+    @ApiResponse({ status: 404, description: 'Venta no encontrada.' })
+    async actualizarEstado(@Param('id', ParseIntPipe) id: number, @Body() dto: { estadonuevo: string }) {
+      return await this.ventasService.actualizarEstado(id, dto);
+    }
 }
