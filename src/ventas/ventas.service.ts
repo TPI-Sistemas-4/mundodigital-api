@@ -125,7 +125,7 @@ export class VentasService {
       const venta = await tx.ventas.create({
         data: {
           idcliente:           dto.idCliente,
-          estado:              dto.estado ?? EstadoVenta.PENDIENTE,         
+          estado:              dto.estado ?? EstadoVenta.CONFIRMADA,         
           subtotal,
           descuento,
           total,
@@ -272,10 +272,10 @@ export class VentasService {
         throw new NotFoundException(`Venta ${idVenta} no encontrada`);
       }
 
-      // CA: solo se pueden cancelar ventas en estado "Pendiente de entrega"
-      if (venta.estado !== EstadoVenta.PENDIENTE) {
+      // CA: solo se pueden cancelar ventas en estado "Confirmada"
+      if (venta.estado !== EstadoVenta.CONFIRMADA) {
         throw new BadRequestException(
-          `Solo se pueden cancelar ventas en estado "Pendiente de entrega". ` +
+          `Solo se pueden cancelar ventas en estado "Confirmada". ` +
           `Estado actual: "${venta.estado}"`,
         );
       }
