@@ -10,6 +10,7 @@ import { FilterVentaDto } from './dto/filter-venta.dto';
 import { PuntosService } from 'src/puntos/punto.service';
 @Injectable()
 export class VentasService {
+    
   constructor(private readonly prismaService: PrismaService, private readonly enviosService: EnviosService, private readonly puntosService: PuntosService) {}
 
 
@@ -302,6 +303,34 @@ export class VentasService {
         await this.enviosService.actualizarEstado(idVenta, { estadonuevo: 'Cancelado', observaciones: 'Venta cancelada' });
 
         return ventaCancelada;
+      });
+    }
+
+    async actualizarEstado(id: number, dto: { estadonuevo: string; }) {
+      const estadosValidos = Object.values(EstadoVenta);
+      if (!estadosValidos.includes(dto.estadonuevo as EstadoVenta)) {
+        throw new BadRequestException(
+          `Estado no válido. Los estados permitidos son: ${estadosValidos.join(', ')}`,
+        );
+      }
+
+      // una venta completada no puede ser actualizada a otro estado
+      const venta = await this.prismaService.ventas.findUnique({
+        where: { idventa: id },
+      });
+      if (!venta) {
+        throw new NotFoundException(`Venta ${id} no encontrada`);
+      }
+      if (venta.estado === EstadoVenta.COMPLETADA || venta.estado === EstadoVenta.CANCELADA) {
+        throw new BadRequestException(
+          `No se puede actualizar el estado de una venta que ya está completada o cancelada.`,
+        );
+      }
+
+      return await this.prismaService.ventas.update({
+        where: { idventa: id },
+        data:  { estado: dto.estadonuevo as EstadoVenta },
+        include: { detalleventas: true },
       });
     }
 
