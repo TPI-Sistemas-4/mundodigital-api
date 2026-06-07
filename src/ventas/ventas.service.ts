@@ -280,6 +280,14 @@ export class VentasService {
         );
       }
 
+      // si el envio de una venta tiene estado "Entregado", no se puede cancelar la venta
+      const envio = await this.enviosService.obtenerPorVenta(idVenta);
+      if (envio && envio.estado === 'Entregado') {
+        throw new BadRequestException(
+          `No se puede cancelar la venta porque su envío ya fue entregado.`,
+        );
+      }
+
       // CA: transacción — cambiar estado y restaurar stock atomicamente
       return await this.prismaService.$transaction(async (tx) => {
         // Cambiar estado a cancelada
@@ -291,6 +299,7 @@ export class VentasService {
 
         // CA: restaurar stock de cada producto (HU19)
         await this.restaurarStock(idVenta, tx);
+        await this.enviosService.actualizarEstado(idVenta, { estadonuevo: 'Cancelado', observaciones: 'Venta cancelada' });
 
         return ventaCancelada;
       });
