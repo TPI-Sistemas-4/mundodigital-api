@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 
 import { CrearEnvioDto } from './dto/crear-envio.dto';
 import { EnvioResponseDto } from './dto/envio-response.dto';
@@ -10,7 +10,10 @@ import { VentasService } from 'src/ventas/ventas.service';
 
 @Injectable()
 export class EnviosService {
-  constructor(private readonly prisma: PrismaService, private readonly ventasService: VentasService) {}
+  constructor(private readonly prisma: PrismaService, 
+    @Inject(forwardRef(() => VentasService))
+    private readonly ventasService: VentasService,
+  ) {}
 
   // Mapa de transiciones válidas (CA: solo se permiten estas)
   private readonly TRANSICIONES: Record<string, string> = {

@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -11,7 +13,10 @@ import { PuntosService } from 'src/puntos/punto.service';
 @Injectable()
 export class VentasService {
     
-  constructor(private readonly prismaService: PrismaService, private readonly enviosService: EnviosService, private readonly puntosService: PuntosService) {}
+  constructor(private readonly prismaService: PrismaService, 
+    private readonly puntosService: PuntosService,
+    @Inject(forwardRef(() => EnviosService))
+    private readonly enviosService: EnviosService,) {}
 
 
 
