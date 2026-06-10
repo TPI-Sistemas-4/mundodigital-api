@@ -305,7 +305,14 @@ export class VentasService {
 
         // CA: restaurar stock de cada producto (HU19)
         await this.restaurarStock(idVenta, tx);
-        await this.enviosService.actualizarEstado(idVenta, { estadonuevo: 'Cancelado', observaciones: 'Venta cancelada' });
+        // cambiar estado solo si existe (hay ventas que se genearron sin envios)
+        const envio = await this.enviosService.obtenerPorVenta(idVenta);
+        if (envio && envio.estado !== 'Cancelado') {
+          await this.enviosService.actualizarEstado(envio.idenvio, { 
+            estadonuevo: 'Cancelado', 
+            observaciones: 'Venta cancelada' 
+          });
+        }
 
         return ventaCancelada;
       });
