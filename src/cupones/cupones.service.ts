@@ -74,17 +74,27 @@ export class CuponesService {
 
     async findAll() {
         return this.prismaService.cupones.findMany({
-            where: { activo: true },
+            where: { activo: true, fechavencimiento: { gte: new Date() } },
             include: {
-                clientes: {
-                    select: { idcliente: true, nombre: true, apellido: true, email: true },
+            clientes: {
+                select: { idcliente: true, nombre: true, apellido: true, email: true },
+            },
+            promociones: {
+                select: {
+                idpromocion: true,
+                nombre: true,
+                detallepromocion: {
+                    select: {
+                    idproducto: true,
+                    descuentoporcentaje: true,
+                    },
                 },
-                promociones: {
-                    select: { idpromocion: true, nombre: true },
                 },
             },
-            orderBy: { idcupon: 'desc' },
-        });
+            },
+            
+            orderBy: { fechavencimiento: 'asc' },
+        })
     }
 
     async findOne(id: number) {
