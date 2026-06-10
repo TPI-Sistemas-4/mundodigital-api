@@ -72,4 +72,9 @@ export class CreateVentaDto {
   @ValidateNested({ each: true })
   @Type(() => CreateDetalleVentaDto)
   detalles!: CreateDetalleVentaDto[];
+
+  @ApiPropertyOptional({ example: 5, description: 'ID del cupón a aplicar (opcional)' })
+  @IsOptional()
+  @IsInt()
+  idCupon?: number;
 }

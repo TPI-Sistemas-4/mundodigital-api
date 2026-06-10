@@ -26,171 +26,229 @@ export class VentasService {
         });
   }
 
-    async create(dto: CreateVentaDto) {
+  async create(dto: CreateVentaDto) {
 
-    // ── RN04: cliente debe existir ────────────────────────────────────────────
-    const cliente = await this.prismaService.clientes.findUnique({
-      where: { idcliente: dto.idCliente },
-    });
-    if (!cliente) {
-      throw new NotFoundException(`Cliente ${dto.idCliente} no encontrado`);
+  // ── RN04: cliente debe existir ────────────────────────────────────────────
+  const cliente = await this.prismaService.clientes.findUnique({
+    where: { idcliente: dto.idCliente },
+  });
+  if (!cliente) {
+    throw new NotFoundException(`Cliente ${dto.idCliente} no encontrado`);
+  }
+
+  // ── RN05: traer productos y verificar stock ───────────────────────────────
+  const ids = dto.detalles.map((d) => d.idProducto);
+  const productos = await this.prismaService.productos.findMany({
+    where: { idproducto: { in: ids } },
+  });
+  const productoMap = new Map(productos.map((p) => [p.idproducto, p]));
+
+  for (const detalle of dto.detalles) {
+    const producto = productoMap.get(detalle.idProducto);
+    if (!producto) {
+      throw new NotFoundException(`Producto ${detalle.idProducto} no encontrado`);
     }
-
-    // ── RN05: traer productos y verificar stock ───────────────────────────────
-    const ids = dto.detalles.map((d) => d.idProducto);
-    const productos = await this.prismaService.productos.findMany({
-      where: { idproducto: { in: ids } },
-    });
-    const productoMap = new Map(productos.map((p) => [p.idproducto, p]));
-
-    for (const detalle of dto.detalles) {
-      const producto = productoMap.get(detalle.idProducto);
-      if (!producto) {
-        throw new NotFoundException(`Producto ${detalle.idProducto} no encontrado`);
-      }
-      if (producto.stockactual && producto.stockactual < detalle.cantidad) {
-        throw new BadRequestException(
-          `Stock insuficiente para "${producto.nombre}": ` +
-          `disponible ${producto.stockactual}, solicitado ${detalle.cantidad}`,
-        );
-      }
+    if (producto.stockactual && producto.stockactual < detalle.cantidad) {
+      throw new BadRequestException(
+        `Stock insuficiente para "${producto.nombre}": ` +
+        `disponible ${producto.stockactual}, solicitado ${detalle.cantidad}`,
+      );
     }
+  }
 
-    // ── Buscar promociones vigentes a la fecha de la venta ────────────────────
-    // Una promoción es vigente si: activa=true AND fechadesde <= ahora <= fechahasta
-    // y tiene al menos un producto que coincide con los ítems del pedido
-    const ahora = new Date();
+  // ── Buscar promociones vigentes a la fecha de la venta ────────────────────
+  // Una promoción es vigente si: activa=true AND fechadesde <= ahora <= fechahasta
+  // y tiene al menos un producto que coincide con los ítems del pedido
+  const ahora = new Date();
 
-    // Buscar promociones vigentes:
-    // - generales: detallepromocion con idproducto NULL → aplica a toda la venta
-    // - por producto: detallepromocion con idproducto en los ids del pedido
-    const promocionesVigentes = await this.prismaService.promociones.findMany({
-      where: {
-        activa: true,
-        fechadesde: { lte: ahora },
-        fechahasta:  { gte: ahora },
-        detallepromocion: {
-          some: {
-            OR: [
-              { idproducto: { in: ids } },  // aplica a productos del pedido
-              { idproducto: null },          // aplica a la venta completa
-            ],
-          },
+  // Buscar promociones vigentes:
+  // - generales: detallepromocion con idproducto NULL → aplica a toda la venta
+  // - por producto: detallepromocion con idproducto en los ids del pedido
+  const promocionesVigentes = await this.prismaService.promociones.findMany({
+    where: {
+      activa: true,
+      fechadesde: { lte: ahora },
+      fechahasta:  { gte: ahora },
+      detallepromocion: {
+        some: {
+          OR: [
+            { idproducto: { in: ids } },  // aplica a productos del pedido
+            { idproducto: null },          // aplica a la venta completa
+          ],
         },
       },
-      include: {
-        detallepromocion: true, // traemos todos para clasificarlos abajo
-      },
-    });
+    },
+    include: {
+      detallepromocion: true, // traemos todos para clasificarlos abajo
+    },
+  });
 
-    // Mapa idProducto → mayor descuento por producto
-    const descuentoProductoMap = new Map<number, number>();
-    // Mayor descuento general sobre la venta total
-    let descuentoGeneralPct = 0;
+  // Mapa idProducto → mayor descuento por producto
+  const descuentoProductoMap = new Map<number, number>();
+  // Mayor descuento general sobre la venta total
+  let descuentoGeneralPct = 0;
 
-    for (const promo of promocionesVigentes) {
-      for (const detalle of promo.detallepromocion) {
-        if (detalle.idproducto === null) {
-          // Promoción general: nos quedamos con el porcentaje más alto
-          if (detalle.descuentoporcentaje > descuentoGeneralPct) {
-            descuentoGeneralPct = detalle.descuentoporcentaje;
-          }
-        } else if (ids.includes(detalle.idproducto)) {
-          // Promoción por producto: mayor descuento para ese producto
-          const actual = descuentoProductoMap.get(detalle.idproducto) ?? 0;
-          if (detalle.descuentoporcentaje > actual) {
-            descuentoProductoMap.set(detalle.idproducto, detalle.descuentoporcentaje);
-          }
+  for (const promo of promocionesVigentes) {
+    for (const detalle of promo.detallepromocion) {
+      if (detalle.idproducto === null) {
+        // Promoción general: nos quedamos con el porcentaje más alto
+        if (detalle.descuentoporcentaje > descuentoGeneralPct) {
+          descuentoGeneralPct = detalle.descuentoporcentaje;
+        }
+      } else if (ids.includes(detalle.idproducto)) {
+        // Promoción por producto: mayor descuento para ese producto
+        const actual = descuentoProductoMap.get(detalle.idproducto) ?? 0;
+        if (detalle.descuentoporcentaje > actual) {
+          descuentoProductoMap.set(detalle.idproducto, detalle.descuentoporcentaje);
         }
       }
     }
+  }
 
-    // ── Calcular subtotal, descuento y total ──────────────────────────────────
-    let subtotal = 0;
-    let descuento = 0;
+// ── Validar y aplicar cupón si se envió ──────────────────────────────────
+let descuentoCuponPct = 0;
+let cuponEsGeneral = true;
+const descuentoCuponPorProducto = new Map<number, number>();
 
-    for (const detalle of dto.detalles) {
-      const producto = productoMap.get(detalle.idProducto)!;
-      const precio   = Number(producto.precio);
-      const linea    = precio * detalle.cantidad;
-
-      // Si el producto tiene descuento propio, tiene prioridad sobre el general
-      const pct = descuentoProductoMap.has(detalle.idProducto)
-        ? descuentoProductoMap.get(detalle.idProducto)! / 100
-        : descuentoGeneralPct / 100;
-
-      subtotal  += linea;
-      descuento += linea * pct;
+if (dto.idCupon) {
+const cupon = await this.prismaService.cupones.findUnique({
+  where: { idcupon: dto.idCupon },
+  include: {
+    promociones: {
+      include: { detallepromocion: true }
     }
+  }
+});
 
-    const total = subtotal - descuento;
+if (!cupon) throw new NotFoundException(`Cupón ${dto.idCupon} no encontrado`);
+  if (!cupon.activo) throw new BadRequestException(`El cupón "${cupon.codigo}" no está activo`);
+  if (cupon.fechavencimiento && cupon.fechavencimiento < ahora)
+    throw new BadRequestException(`El cupón "${cupon.codigo}" está vencido`);
+  if (cupon.idcliente && cupon.idcliente !== dto.idCliente)
+    throw new BadRequestException(`El cupón "${cupon.codigo}" no pertenece a este cliente`);
 
-    // ── Transacción ───────────────────────────────────────────────────────────
-    const ventaCompleta = await this.prismaService.$transaction(async (tx) => {
+  descuentoCuponPct = cupon.descuentoporcentaje;
 
-      const venta = await tx.ventas.create({
+  // Determinar si el cupón aplica a productos específicos o a toda la venta
+  if (cupon.promociones?.detallepromocion?.length) {
+    const tieneGeneral = cupon.promociones.detallepromocion.some(d => d.idproducto === null)
+    if (!tieneGeneral) {
+      // Cupón por productos específicos
+      cuponEsGeneral = false
+      for (const d of cupon.promociones.detallepromocion) {
+        if (d.idproducto !== null && ids.includes(d.idproducto)) {
+          descuentoCuponPorProducto.set(d.idproducto, cupon.descuentoporcentaje)
+        }
+      }
+    }
+  }
+}
+
+  // ── Calcular subtotal, descuento y total ──────────────────────────────────
+  let subtotal = 0;
+  let descuento = 0;
+
+  for (const detalle of dto.detalles) {
+    const producto = productoMap.get(detalle.idProducto)!;
+    const precio   = Number(producto.precio);
+    const linea    = precio * detalle.cantidad;
+
+    const pctPromo = descuentoProductoMap.has(detalle.idProducto)
+      ? descuentoProductoMap.get(detalle.idProducto)! / 100
+      : descuentoGeneralPct / 100;
+
+    // ← esto es lo que hay que cambiar:
+    const pctCupon = cuponEsGeneral
+      ? descuentoCuponPct / 100
+      : (descuentoCuponPorProducto.get(detalle.idProducto) ?? 0) / 100;
+
+    const pct = Math.max(pctPromo, pctCupon);
+
+    subtotal  += linea;
+    descuento += linea * pct;
+  }
+
+  const total = subtotal - descuento;
+
+  // ── Transacción ───────────────────────────────────────────────────────────
+  const ventaCompleta = await this.prismaService.$transaction(async (tx) => {
+
+    const venta = await tx.ventas.create({
+      data: {
+        idcliente:           dto.idCliente,
+        estado:              dto.estado ?? EstadoVenta.CONFIRMADA,         
+        subtotal,
+        descuento,
+        total,
+        direccionentrega:    dto.direccionEntrega    ?? null,
+        indicacionesentrega: dto.indicacionesEntrega ?? null,
+      },
+    });
+
+    await tx.detalleventas.createMany({
+      data: dto.detalles.map((d) => ({
+        idventa:        venta.idventa,
+        idproducto:     d.idProducto,
+        cantidad:       d.cantidad,
+        preciounitario: productoMap.get(d.idProducto)!.precio,
+      })),
+    });
+
+    if (dto.idCupon) {
+      await tx.usocupones.create({
         data: {
-          idcliente:           dto.idCliente,
-          estado:              dto.estado ?? EstadoVenta.CONFIRMADA,         
-          subtotal,
-          descuento,
-          total,
-          direccionentrega:    dto.direccionEntrega    ?? null,
-          indicacionesentrega: dto.indicacionesEntrega ?? null,
+          idcupon: dto.idCupon,
+          idventa: venta.idventa,
         },
       });
-
-      await tx.detalleventas.createMany({
-        data: dto.detalles.map((d) => ({
-          idventa:        venta.idventa,
-          idproducto:     d.idProducto,
-          cantidad:       d.cantidad,
-          preciounitario: productoMap.get(d.idProducto)!.precio,
-        })),
+      await tx.cupones.update({
+        where: { idcupon: dto.idCupon },
+        data: { activo: false },
       });
-
-      for (const d of dto.detalles) {
-        await tx.productos.update({
-          where: { idproducto: d.idProducto },
-          data:  { stockactual: { decrement: d.cantidad } },
-        });
-      }
-
-    // ← traer la venta completa con detalles al final
-      return tx.ventas.findUnique({
-          where: { idventa: venta.idventa },
-          include: { detalleventas: true }
-        });
-      });
-
-      if (!ventaCompleta) {
-        throw new NotFoundException(`Error al recuperar la venta recién creada.`);
-      }
-
-      console.log('[VentasService] Venta creada:', ventaCompleta.idventa);
-      console.log('[VentasService] Llamando a enviosService.registrar...');
-
-      // Registrar puntos para el cliente
-      try {
-        const puntosResult = await this.puntosService.registrar({ idventa: ventaCompleta.idventa })
-      } catch (error:any) {
-        console.error('[VentasService] Error al registrar puntos:', error.message);
-      }
-
-      try {
-        const envio = await this.enviosService.registrar({
-          idventa:          ventaCompleta.idventa,
-          direccionentrega: dto.direccionEntrega ?? '',
-          observaciones:    'Envío generado automáticamente',
-        });
-        console.log('[VentasService] Envío creado:', envio);
-      } catch (error:any) {
-        console.error('[VentasService] Error al crear envío:', error.message);
-      }
-
-      return ventaCompleta;
-      
     }
+
+    for (const d of dto.detalles) {
+      await tx.productos.update({
+        where: { idproducto: d.idProducto },
+        data:  { stockactual: { decrement: d.cantidad } },
+      });
+    }
+
+  // ← traer la venta completa con detalles al final
+    return tx.ventas.findUnique({
+        where: { idventa: venta.idventa },
+        include: { detalleventas: true }
+      });
+    });
+
+    if (!ventaCompleta) {
+      throw new NotFoundException(`Error al recuperar la venta recién creada.`);
+    }
+
+    console.log('[VentasService] Venta creada:', ventaCompleta.idventa);
+    console.log('[VentasService] Llamando a enviosService.registrar...');
+
+    // Registrar puntos para el cliente
+    try {
+      const puntosResult = await this.puntosService.registrar({ idventa: ventaCompleta.idventa })
+    } catch (error:any) {
+      console.error('[VentasService] Error al registrar puntos:', error.message);
+    }
+
+    try {
+      const envio = await this.enviosService.registrar({
+        idventa:          ventaCompleta.idventa,
+        direccionentrega: dto.direccionEntrega ?? '',
+        observaciones:    'Envío generado automáticamente',
+      });
+      console.log('[VentasService] Envío creado:', envio);
+    } catch (error:any) {
+      console.error('[VentasService] Error al crear envío:', error.message);
+    }
+
+    return ventaCompleta;
+    
+  }
     
     async findOne(id: number) {
       const venta = await this.prismaService.ventas.findUnique({
